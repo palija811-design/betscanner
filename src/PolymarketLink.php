@@ -15,7 +15,13 @@ namespace SignalPitch;
  */
 final class PolymarketLink
 {
-    private const LEAGUE = [3 => 'uel', 848 => 'ucol', 2 => 'ucl'];
+    // Códigos de liga en Polymarket. Europeas y las 5 grandes domésticas.
+    private const LEAGUE = [
+        2 => 'ucl', 3 => 'uel', 848 => 'ucol',        // Champions, Europa, Conference
+        39 => 'epl', 140 => 'laliga', 135 => 'seriea', // Premier, LaLiga, Serie A
+        78 => 'bundesliga', 61 => 'ligue-1',           // Bundesliga, Ligue 1
+        94 => 'primeira-liga',                         // Primeira Liga
+    ];
 
     public static function forMatch(string $home, string $away, int $leagueId, string $matchDate): string
     {
@@ -38,7 +44,13 @@ final class PolymarketLink
                 foreach (($data['events'] ?? []) as $e) {
                     $slug = $e['slug'] ?? '';
                     if ($slug !== '' && str_contains($slug, $matchDate)) {
-                        return "https://polymarket.com/es/sports/{$liga}/{$slug}";
+                        // el slug ya empieza por el codigo de liga de Polymarket
+                        // (p.ej. "uel-agf-ben-..."), asi que lo usamos para la ruta
+                        $ligaSlug = $liga;
+                        if ($ligaSlug === '' && str_contains($slug, '-')) {
+                            $ligaSlug = explode('-', $slug)[0];  // saca "uel" de "uel-agf-ben-..."
+                        }
+                        return "https://polymarket.com/es/sports/{$ligaSlug}/{$slug}";
                     }
                 }
             }
