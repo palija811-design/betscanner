@@ -14,6 +14,7 @@ declare(strict_types=1);
 require __DIR__ . '/../src/Db.php';
 require __DIR__ . '/../src/ApiFootball.php';
 require __DIR__ . '/../src/RecentForm.php';
+require __DIR__ . '/../src/BlendWeight.php';
 require __DIR__ . '/../src/Scorer.php';
 require __DIR__ . '/../src/ReasoningScorer.php';
 require __DIR__ . '/../src/PolymarketLink.php';
@@ -22,6 +23,7 @@ use SignalPitch\Db;
 use SignalPitch\ApiFootball;
 use SignalPitch\RecentForm;
 use SignalPitch\Scorer;
+use SignalPitch\BlendWeight;
 use SignalPitch\ReasoningScorer;
 use SignalPitch\PolymarketLink;
 
@@ -108,7 +110,7 @@ try {
         $finalScore = $statScore; $rv = null; $radj = null;
         if ($rAll !== null && isset($rAll[$mk]['score'])) {
             $aiScore = (int)$rAll[$mk]['score'];
-            $finalScore = (int)round($statScore*0.6 + $aiScore*0.4);
+            $finalScore = BlendWeight::blend($statScore, $aiScore, $played);
             $rv = $rAll[$mk]['verdict'] ?? '';
             $radj = $finalScore - $statScore;
         }

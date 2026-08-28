@@ -175,6 +175,7 @@ function renderResult(d){
     html+='<div class="mkt">'+
       '<div class="mkt-top"><span class="mkt-tag">'+mLabel(mk.market)+'</span>'+adj+
       '<span class="mkt-score" style="color:'+col+'">'+mk.final_score+'</span></div>'+
+      '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-bottom:6px">estadistica '+mk.stat_score+(mk.research_adjustment!==null&&mk.research_adjustment!==undefined?' &rarr; final '+mk.final_score+' (IA)':'')+'</div>'+
       (mk.research_verdict?'<div class="mkt-verdict">'+mk.research_verdict+'</div>':'<div class="mkt-verdict">Solo score estadistico (no alcanzo el umbral para investigacion IA).</div>')+
     '</div>';
   });
