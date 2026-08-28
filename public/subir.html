@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Pitch - Analizar apuesta</title>
+<style>
+  :root{--bg:#0a0e0d;--panel:#111917;--panel-2:#16211e;--line:#223330;--ink:#e6f0ec;
+    --ink-dim:#7d938c;--signal:#3ef2a1;--signal-dim:#1c8f5e;--warn:#ffcc4d;--danger:#ff6b6b;
+    --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;
+    background-image:radial-gradient(circle at 15% 0%,rgba(62,242,161,0.06),transparent 40%)}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border:1.5px solid var(--signal);border-radius:10px;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;color:var(--signal);font-size:20px}
+  .brand h1{font-size:18px}.brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:2px}
+  .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+  .navlink:hover{color:var(--signal)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tabs button{flex:1;background:transparent;color:var(--ink-dim);border:1px solid var(--line);border-radius:8px;
+    font-family:var(--mono);font-size:12px;padding:10px;cursor:pointer}
+  .tabs button.on{background:var(--signal);color:#04120c;font-weight:700;border-color:var(--signal)}
+  label{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+  input,select{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font-family:var(--sans);font-size:15px;padding:11px 13px;margin-bottom:16px}
+  input:focus,select:focus{outline:none;border-color:var(--signal-dim)}
+  .row{display:flex;gap:12px}.row>div{flex:1}
+  .btn{width:100%;background:var(--signal);color:#04120c;border:none;border-radius:8px;font-weight:700;
+    font-family:var(--sans);font-size:15px;padding:13px;cursor:pointer;transition:.15s}
+  .btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:wait}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:-8px;margin-bottom:16px}
+  #result{margin-top:8px}
+  .res-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+  .res-teams{font-size:20px;font-weight:700}.res-league{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:4px}
+  .mkt{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+  .mkt-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .mkt-tag{font-family:var(--mono);font-weight:700;font-size:13px;padding:4px 10px;border-radius:6px;background:rgba(62,242,161,0.1);color:var(--signal);border:1px solid var(--signal-dim)}
+  .mkt-score{margin-left:auto;font-family:var(--mono);font-weight:700;font-size:20px}
+  .mkt-verdict{font-size:13px;line-height:1.5;color:var(--ink-dim)}
+  .adj{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px}
+  .adj.up{background:rgba(62,242,161,0.12);color:var(--signal)}.adj.down{background:rgba(255,107,107,0.12);color:var(--danger)}
+  .poly a{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--signal);text-decoration:none;border:1px solid var(--signal-dim);border-radius:8px;padding:8px 14px}
+  .loading,.err{font-family:var(--mono);font-size:13px;color:var(--ink-dim);text-align:center;padding:24px}
+  .err{color:var(--danger)}
+  .disc{font-family:var(--mono);font-size:10px;color:var(--ink-dim);line-height:1.6;margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">&#9672;</div>
+      <div><h1>Analizar apuesta</h1><p>MOTOR + INVESTIGACION IA</p></div>
+    </div>
+    <a class="navlink" href="/index.html">&larr; Senales</a>
+  </header>
+
+  <div class="card">
+    <div class="tabs">
+      <button id="tabWrite" class="on" onclick="setTab('write')">Escribir equipos</button>
+      <button id="tabList" onclick="setTab('list')">Elegir de hoy</button>
+    </div>
+
+    <div id="paneWrite">
+      <div class="row">
+        <div><label>Equipo local</label><input id="home" placeholder="Ej: Lille"></div>
+        <div><label>Equipo visitante</label><input id="away" placeholder="Ej: PSG"></div>
+      </div>
+      <div class="hint">Escribe el nombre en inglés si puedes (Lille, PSG, Milan...). El sistema busca el partido en los próximos 7 días.</div>
+    </div>
+
+    <div id="paneList" style="display:none">
+      <label>Partido de hoy</label>
+      <select id="fixtureSelect"><option value="">Cargando partidos...</option></select>
+    </div>
+
+    <label>Mercado a analizar</label>
+    <select id="market">
+      <option value="">Los tres (BTTS, Over, Under)</option>
+      <option value="BTTS">BTTS - Ambos marcan</option>
+      <option value="OVER">Over 2.5</option>
+      <option value="UNDER">Under 2.5</option>
+    </select>
+
+    <button class="btn" id="goBtn" onclick="analyze()">Analizar</button>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="disc">Herramienta de analisis informativo, no una recomendacion de apuesta ni garantia de resultado. La ventaja de la casa sigue existiendo. Juega solo lo que puedas permitirte perder. Juego responsable en Espana: FEJAR - autoprohibicion RGIAJ.</div>
+</div>
+
+<script>
+let tab='write';
+function setTab(t){
+  tab=t;
+  document.getElementById('tabWrite').classList.toggle('on',t==='write');
+  document.getElementById('tabList').classList.toggle('on',t==='list');
+  document.getElementById('paneWrite').style.display = t==='write'?'block':'none';
+  document.getElementById('paneList').style.display = t==='list'?'block':'none';
+  if(t==='list') loadFixtures();
+}
+
+let fixturesLoaded=false;
+function loadFixtures(){
+  if(fixturesLoaded) return;
+  fetch('/api.php?min=0').then(r=>r.json()).then(d=>{
+    const sel=document.getElementById('fixtureSelect');
+    if(d && d.ok && d.signals && d.signals.length){
+      // partidos únicos de las señales de hoy
+      const seen={}; const opts=[];
+      d.signals.forEach(s=>{ const k=s.fixture_id; if(!seen[k]){seen[k]=1;
+        opts.push('<option value="'+s.fixture_id+'">'+s.home+' - '+s.away+' ('+s.league+')</option>');}});
+      sel.innerHTML='<option value="">Elige un partido...</option>'+opts.join('');
+    } else {
+      sel.innerHTML='<option value="">No hay partidos analizados hoy</option>';
+    }
+    fixturesLoaded=true;
+  }).catch(()=>{ document.getElementById('fixtureSelect').innerHTML='<option value="">Error cargando</option>'; });
+}
+
+function analyze(){
+  const market=document.getElementById('market').value;
+  let url='/analyze.php?';
+  if(tab==='write'){
+    const home=document.getElementById('home').value.trim();
+    const away=document.getElementById('away').value.trim();
+    if(!home||!away){ showErr('Escribe los dos equipos.'); return; }
+    url+='home='+encodeURIComponent(home)+'&away='+encodeURIComponent(away);
+  } else {
+    const fid=document.getElementById('fixtureSelect').value;
+    if(!fid){ showErr('Elige un partido de la lista.'); return; }
+    url+='fixture_id='+fid;
+  }
+  if(market) url+='&market='+market;
+
+  const btn=document.getElementById('goBtn');
+  btn.disabled=true; btn.textContent='Analizando... (puede tardar 10-20s)';
+  document.getElementById('result').innerHTML='<div class="card"><div class="loading">Buscando el partido, calculando forma reciente y consultando la IA...</div></div>';
+
+  fetch(url).then(r=>r.json()).then(d=>{
+    btn.disabled=false; btn.textContent='Analizar';
+    if(!d.ok){ showErr(d.error||'No se pudo analizar.'); return; }
+    renderResult(d);
+  }).catch(()=>{ btn.disabled=false; btn.textContent='Analizar'; showErr('Error de conexion.'); });
+}
+
+function showErr(m){ document.getElementById('result').innerHTML='<div class="card"><div class="err">'+m+'</div></div>'; }
+
+function scoreColor(s){ return s>=70?'var(--signal)':s>=55?'var(--warn)':'var(--danger)'; }
+function mLabel(mk){ return mk==='OVER'?'OVER 2.5':mk==='UNDER'?'UNDER 2.5':'BTTS SI'; }
+
+function renderResult(d){
+  const m=d.match;
+  const kick=new Date(m.kickoff).toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  let html='<div class="card"><div class="res-head"><div>'+
+    '<div class="res-teams">'+m.home+' &mdash; '+m.away+'</div>'+
+    '<div class="res-league">'+m.league+' &middot; '+(m.country||'')+' &middot; KO '+kick+'</div>'+
+    '<div class="res-league">Forma: '+m.home+' '+m.home_form.played+'pj (gf'+m.home_form.gf_avg+' ga'+m.home_form.ga_avg+' btts'+m.home_form.btts_pct+'%) &middot; '+
+      m.away+' '+m.away_form.played+'pj (gf'+m.away_form.gf_avg+' ga'+m.away_form.ga_avg+' btts'+m.away_form.btts_pct+'%)</div>'+
+    '</div></div>';
+
+  d.markets.forEach(function(mk){
+    const col=scoreColor(mk.final_score);
+    let adj='';
+    if(mk.research_adjustment!==null && mk.research_adjustment!==undefined && mk.research_adjustment!==0){
+      const up=mk.research_adjustment>0;
+      adj='<span class="adj '+(up?'up':'down')+'">IA '+(up?'+':'')+mk.research_adjustment+'</span>';
+    }
+    html+='<div class="mkt">'+
+      '<div class="mkt-top"><span class="mkt-tag">'+mLabel(mk.market)+'</span>'+adj+
+      '<span class="mkt-score" style="color:'+col+'">'+mk.final_score+'</span></div>'+
+      (mk.research_verdict?'<div class="mkt-verdict">'+mk.research_verdict+'</div>':'<div class="mkt-verdict">Solo score estadistico (no alcanzo el umbral para investigacion IA).</div>')+
+    '</div>';
+  });
+
+  if(m.polymarket_url){
+    html+='<div class="poly"><a href="'+m.polymarket_url+'" target="_blank" rel="noopener">Ver en Polymarket &#8599;</a></div>';
+  }
+  html+='</div>';
+  document.getElementById('result').innerHTML=html;
+}
+</script>
+</body>
+</html>
