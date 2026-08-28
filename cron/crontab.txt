@@ -1,0 +1,13 @@
+# /etc/cron.d/signalpitch  ·  min hora dia mes diasem  usuario  comando
+SHELL=/bin/bash
+BASH_ENV=/etc/environment
+
+# Ingesta principal por la mañana (cubre todos los partidos del día)
+15 8 * * *   root  php /var/www/html/cron/ingest_v3.php >> /var/log/signalpitch.log 2>&1
+# Refuerzo a media tarde por si se añadieron partidos de última hora
+30 15 * * *  root  php /var/www/html/cron/ingest_v3.php >> /var/log/signalpitch.log 2>&1
+# Liquidación de resultados de madrugada
+30 1 * * *   root  php /var/www/html/cron/settle.php    >> /var/log/signalpitch.log 2>&1
+# Evolución de estrategias, los lunes
+0  3 * * 1   root  php /var/www/html/cron/evolve.php     >> /var/log/signalpitch.log 2>&1
+# (linea final en blanco obligatoria)

@@ -42,7 +42,8 @@ $reasoner = new ReasoningScorer($cfg['claude']);
 $season = $cfg['apifootball']['season'];
 $today  = gmdate('Y-m-d');
 
-const UMBRAL_INVESTIGACION = 65;   // solo investigamos partidos con score >= esto
+const UMBRAL_INVESTIGACION = 65;   // se investiga el partido si algún mercado llega a esto
+const UMBRAL_GUARDADO      = 50;   // se guarda cada mercado que supere esto (no solo el mejor)
 
 function logln(string $m): void { echo '[' . gmdate('H:i:s') . "] v3 · $m\n"; }
 logln("=== $today · gastadas hoy: {$api->spentToday()} req ===");
@@ -104,10 +105,12 @@ foreach ($leagues as $lg) {
                 ':st'=>$fx['fixture']['status']['short']??'NS',
                 ':h'=>(int)$h['id'],':a'=>(int)$a['id'],':h2h'=>$expGoals,':poly'=>$poly]);
 
-        // CAPA 2: investigación web SOLO si el mejor mercado supera el umbral
-        $research = ['verdict'=>null,'adjustment'=>null];
-        $finalScore = $best['score'];
-        if ($best['score'] >= UMBRAL_INVESTIGACION) {
+        // Investigación web: se calcula UNA vez por partido (es cara) y se
+        // reutiliza para todos los mercados. Solo si algún mercado es fuerte.
+        $anyStrong = false;
+        foreach ($analysis['markets'] as $sc) { if ($sc >= UMBRAL_INVESTIGACION) { $anyStrong = true; break; } }
+        $rAll = null;
+        if ($anyStrong) {
             try {
                 $ctx = [
                     'league'=>$lg['name'], 'kickoff'=>gmdate('H:i',strtotime($fx['fixture']['date'])),
@@ -116,40 +119,45 @@ foreach ($leagues as $lg) {
                     'home'=>['name'=>$h['name'],'form'=>null,'gf_avg'=>$hs['gf_avg'],'ga_avg'=>$hs['ga_avg'],'btts_pct'=>$hs['btts_pct'],'over25_pct'=>null,'injuries'=>null],
                     'away'=>['name'=>$a['name'],'form'=>null,'gf_avg'=>$as['gf_avg'],'ga_avg'=>$as['ga_avg'],'btts_pct'=>$as['btts_pct'],'over25_pct'=>null,'injuries'=>null],
                 ];
-                $r = $reasoner->analyze($ctx, $useTop, true);  // true = web search ON
-                $mk = $best['market'];
-                if (isset($r[$mk]['score'])) {
-                    $aiScore = (int)$r[$mk]['score'];
-                    // la investigación ajusta el score estadístico (media ponderada 60/40)
-                    $finalScore = (int)round($best['score']*0.6 + $aiScore*0.4);
-                    $research['verdict'] = $r[$mk]['verdict'] ?? '';
-                    $research['adjustment'] = $finalScore - $best['score'];
-                }
+                $rAll = $reasoner->analyze($ctx, $useTop, true);  // web search ON
             } catch (Throwable $e) {
                 logln("  investigacion fail {$h['name']}-{$a['name']}: ".substr($e->getMessage(),0,60));
             }
         }
 
-        // persiste la señal del mejor mercado
-        $conf = Scorer::confidence($finalScore);
-        $pdo->prepare("INSERT INTO signals
-              (fixture_id, market, stat_score, ai_score, final_score, confidence,
-               factors_json, ai_verdict, ai_risk, research_verdict, research_adjustment, model_used)
-            VALUES (:fx,:mk,:ss,:as,:fs,:cf,:fj,:vd,:rk,:rv,:radj,:md)
-            ON DUPLICATE KEY UPDATE
-              stat_score=VALUES(stat_score), final_score=VALUES(final_score),
-              confidence=VALUES(confidence), factors_json=VALUES(factors_json),
-              research_verdict=VALUES(research_verdict), research_adjustment=VALUES(research_adjustment),
-              computed_at=CURRENT_TIMESTAMP")
-            ->execute([
-                ':fx'=>$fixtureId, ':mk'=>$best['market'], ':ss'=>$best['score'],
-                ':as'=>$finalScore, ':fs'=>$finalScore, ':cf'=>$conf,
-                ':fj'=>json_encode($analysis['factors'], JSON_UNESCAPED_UNICODE),
-                ':vd'=>null, ':rk'=>null,
-                ':rv'=>$research['verdict'], ':radj'=>$research['adjustment'],
-                ':md'=>$best['score']>=UMBRAL_INVESTIGACION ? ($useTop?'sonnet+web':'haiku+web') : 'stat',
-            ]);
-        $total++;
+        // Guarda CADA mercado que supere el umbral de guardado (no solo el mejor)
+        foreach (['BTTS','OVER','UNDER'] as $mk) {
+            $statScore = $analysis['markets'][$mk];
+            if ($statScore < UMBRAL_GUARDADO) continue;   // los flojos no se guardan
+
+            $finalScore = $statScore;
+            $rv = null; $radj = null; $model = 'stat';
+            // aplica la investigación a este mercado si se hizo y lo cubre
+            if ($rAll !== null && isset($rAll[$mk]['score'])) {
+                $aiScore = (int)$rAll[$mk]['score'];
+                $finalScore = (int)round($statScore*0.6 + $aiScore*0.4);
+                $rv = $rAll[$mk]['verdict'] ?? '';
+                $radj = $finalScore - $statScore;
+                $model = $useTop ? 'sonnet+web' : 'haiku+web';
+            }
+            $conf = Scorer::confidence($finalScore);
+            $pdo->prepare("INSERT INTO signals
+                  (fixture_id, market, stat_score, ai_score, final_score, confidence,
+                   factors_json, ai_verdict, ai_risk, research_verdict, research_adjustment, model_used)
+                VALUES (:fx,:mk,:ss,:as,:fs,:cf,:fj,:vd,:rk,:rv,:radj,:md)
+                ON DUPLICATE KEY UPDATE
+                  stat_score=VALUES(stat_score), final_score=VALUES(final_score),
+                  confidence=VALUES(confidence), factors_json=VALUES(factors_json),
+                  research_verdict=VALUES(research_verdict), research_adjustment=VALUES(research_adjustment),
+                  model_used=VALUES(model_used), computed_at=CURRENT_TIMESTAMP")
+                ->execute([
+                    ':fx'=>$fixtureId, ':mk'=>$mk, ':ss'=>$statScore,
+                    ':as'=>$finalScore, ':fs'=>$finalScore, ':cf'=>$conf,
+                    ':fj'=>json_encode($analysis['factors'], JSON_UNESCAPED_UNICODE),
+                    ':vd'=>null, ':rk'=>null, ':rv'=>$rv, ':radj'=>$radj, ':md'=>$model,
+                ]);
+            $total++;
+        }
     }
 }
 logln("=== fin v3 · señales: $total · req hoy: {$api->spentToday()} ===");
