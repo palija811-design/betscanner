@@ -3,134 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Signal Pitch — Análisis de partidos</title>
+<title>Signal Pitch — Senales del dia</title>
 <style>
-  :root {
-    --bg: #0a0e0d;
-    --panel: #111917;
-    --panel-2: #16211e;
-    --line: #223330;
-    --ink: #e6f0ec;
-    --ink-dim: #7d938c;
-    --signal: #3ef2a1;
-    --signal-dim: #1c8f5e;
-    --warn: #ffcc4d;
-    --danger: #ff6b6b;
-    --mono: 'SFMono-Regular', ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
-    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  :root{
+    --bg:#0a0e0d;--panel:#111917;--panel-2:#16211e;--line:#223330;
+    --ink:#e6f0ec;--ink-dim:#7d938c;--signal:#3ef2a1;--signal-dim:#1c8f5e;
+    --warn:#ffcc4d;--danger:#ff6b6b;
+    --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    min-height: 100vh;
-    background-image:
-      radial-gradient(circle at 15% 0%, rgba(62,242,161,0.06), transparent 40%),
-      radial-gradient(circle at 85% 100%, rgba(62,242,161,0.04), transparent 40%);
-  }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 80px; }
-
-  /* Header */
-  header { display: flex; align-items: flex-end; justify-content: space-between;
-    border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 8px; flex-wrap: wrap; gap: 16px; }
-  .brand { display: flex; align-items: center; gap: 14px; }
-  .logo {
-    width: 42px; height: 42px; border: 1.5px solid var(--signal); border-radius: 10px;
-    display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
-    color: var(--signal); font-size: 20px; box-shadow: 0 0 18px rgba(62,242,161,0.25) inset;
-  }
-  .brand h1 { font-size: 19px; letter-spacing: -0.02em; font-weight: 700; }
-  .brand p { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); letter-spacing: 0.05em; margin-top: 2px; }
-  .clock { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); text-align: right; }
-  .clock b { color: var(--signal); }
-
-  /* Controls */
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-    padding: 16px 0 22px; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button {
-    background: transparent; color: var(--ink-dim); border: none; font-family: var(--mono);
-    font-size: 12px; padding: 8px 14px; cursor: pointer; transition: all .15s;
-  }
-  .seg button.on { background: var(--signal); color: #04120c; font-weight: 700; }
-  .seg button:not(.on):hover { color: var(--ink); background: var(--panel-2); }
-  .spacer { flex: 1; }
-  .slider-box { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-dim); }
-  input[type=range] { accent-color: var(--signal); width: 130px; }
-  .thresh-val { color: var(--signal); font-weight: 700; min-width: 34px; }
-
-  /* Summary strip */
-  .strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 26px; }
-  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-  .stat .k { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); letter-spacing: 0.05em; text-transform: uppercase; }
-  .stat .v { font-size: 26px; font-weight: 700; margin-top: 6px; font-family: var(--mono); }
-  .stat .v.sig { color: var(--signal); }
-  @media(max-width:720px){ .strip{ grid-template-columns: repeat(2,1fr);} }
-
-  /* Cards grid */
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  @media(max-width:760px){ .grid{ grid-template-columns: 1fr; } }
-
-  .card {
-    background: linear-gradient(160deg, var(--panel), var(--panel-2));
-    border: 1px solid var(--line); border-radius: 14px; padding: 0; overflow: hidden;
-    position: relative; transition: transform .15s, border-color .15s;
-  }
-  .card:hover { transform: translateY(-2px); border-color: var(--signal-dim); }
-  .card .scoreband { position: absolute; top: 0; left: 0; height: 3px; width: 100%; background: var(--line); }
-  .card .scoreband i { display: block; height: 100%; background: var(--signal); box-shadow: 0 0 10px var(--signal); }
-
-  .card-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 18px 18px 12px; gap: 12px; }
-  .league { font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); letter-spacing: 0.06em; text-transform: uppercase; }
-  .teams { font-size: 17px; font-weight: 700; margin-top: 5px; letter-spacing: -0.01em; }
-  .kick { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); margin-top: 4px; }
-
-  .scorecircle { flex-shrink: 0; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
-    font-family: var(--mono); font-weight: 700; font-size: 22px; position: relative; }
-  .scorecircle small { position: absolute; bottom: 7px; font-size: 8px; font-weight: 500; color: var(--ink-dim); letter-spacing: 0.08em; }
-
-  .market-row { display: flex; align-items: center; gap: 10px; padding: 6px 18px 14px; }
-  .market-tag { font-family: var(--mono); font-size: 13px; font-weight: 700; padding: 5px 11px; border-radius: 6px;
-    background: rgba(62,242,161,0.1); color: var(--signal); border: 1px solid var(--signal-dim); }
-  .verdict { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
-
-  .factors { border-top: 1px solid var(--line); padding: 14px 18px; display: grid; gap: 9px; }
-  .factor { display: grid; grid-template-columns: 130px 1fr 42px; align-items: center; gap: 10px; }
-  .factor .fl { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); }
-  .bar { height: 6px; background: var(--panel); border-radius: 3px; overflow: hidden; }
-  .bar i { display: block; height: 100%; border-radius: 3px; }
-  .factor .fv { font-family: var(--mono); font-size: 11px; text-align: right; color: var(--ink); }
-
-  .ai-note { border-top: 1px solid var(--line); padding: 13px 18px 16px; display: flex; gap: 10px; align-items: flex-start; }
-  .ai-badge { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: #04120c; background: var(--signal);
-    padding: 3px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-  .ai-note p { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
-  .ai-note p b { color: var(--ink); font-weight: 600; }
-
-  footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 18px;
-    font-family: var(--mono); font-size: 11px; color: var(--ink-dim); line-height: 1.7; }
-  .demo-flag { display:inline-block; font-family: var(--mono); font-size: 10px; color: var(--warn);
-    border: 1px solid var(--warn); border-radius: 5px; padding: 2px 7px; margin-left: 8px; letter-spacing: 0.05em; }
-  a { color: var(--signal); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;
+    background-image:radial-gradient(circle at 15% 0%,rgba(62,242,161,0.06),transparent 40%),
+    radial-gradient(circle at 85% 100%,rgba(62,242,161,0.04),transparent 40%)}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:flex-end;justify-content:space-between;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px;flex-wrap:wrap;gap:16px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border:1.5px solid var(--signal);border-radius:10px;display:grid;
+    place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:20px;
+    box-shadow:0 0 18px rgba(62,242,161,0.25) inset}
+  .brand h1{font-size:19px;letter-spacing:-0.02em;font-weight:700}
+  .brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;margin-top:2px}
+  .top-actions{display:flex;align-items:center;gap:14px}
+  .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;
+    border:1px solid var(--line);border-radius:8px;padding:8px 14px;transition:.15s}
+  .navlink:hover{color:var(--signal);border-color:var(--signal-dim)}
+  .clock{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-align:right}
+  .clock b{color:var(--signal)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 0 22px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;color:var(--ink-dim);border:none;font-family:var(--mono);
+    font-size:12px;padding:8px 14px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:var(--signal);color:#04120c;font-weight:700}
+  .seg button:not(.on):hover{color:var(--ink);background:var(--panel-2)}
+  .spacer{flex:1}
+  .slider-box{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  input[type=range]{accent-color:var(--signal);width:130px}
+  .thresh-val{color:var(--signal);font-weight:700;min-width:34px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(160deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;position:relative;transition:transform .15s,border-color .15s}
+  .card:hover{transform:translateY(-2px);border-color:var(--signal-dim)}
+  .scoreband{position:absolute;top:0;left:0;height:3px;width:100%;background:var(--line)}
+  .scoreband i{display:block;height:100%}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 12px;gap:12px}
+  .league{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);letter-spacing:0.06em;text-transform:uppercase}
+  .teams{font-size:17px;font-weight:700;margin-top:5px;letter-spacing:-0.01em}
+  .kick{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:4px}
+  .scorecircle{flex-shrink:0;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:22px;position:relative}
+  .scorecircle small{position:absolute;bottom:7px;font-size:8px;font-weight:500;color:var(--ink-dim);letter-spacing:0.08em}
+  .market-row{display:flex;align-items:center;gap:10px;padding:6px 18px 14px}
+  .market-tag{font-family:var(--mono);font-size:13px;font-weight:700;padding:5px 11px;border-radius:6px;
+    background:rgba(62,242,161,0.1);color:var(--signal);border:1px solid var(--signal-dim)}
+  .verdict{font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase}
+  .adj{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;margin-left:auto}
+  .adj.up{background:rgba(62,242,161,0.12);color:var(--signal)}
+  .adj.down{background:rgba(255,107,107,0.12);color:var(--danger)}
+  .research{border-top:1px solid var(--line);padding:13px 18px;display:flex;gap:10px;align-items:flex-start}
+  .research .badge{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:#04120c;background:var(--signal);
+    padding:3px 6px;border-radius:4px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .research p{font-size:12.5px;line-height:1.5;color:var(--ink-dim)}
+  .poly{border-top:1px solid var(--line);padding:13px 18px}
+  .poly a{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
+    color:var(--signal);text-decoration:none;border:1px solid var(--signal-dim);border-radius:8px;
+    padding:8px 14px;transition:.15s}
+  .poly a:hover{background:rgba(62,242,161,0.1)}
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat .k{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;text-transform:uppercase}
+  .stat .v{font-size:26px;font-weight:700;margin-top:6px;font-family:var(--mono)}
+  .stat .v.sig{color:var(--signal)}
+  @media(max-width:720px){.strip{grid-template-columns:repeat(2,1fr)}}
+  .loading,.empty{text-align:center;color:var(--ink-dim);font-family:var(--mono);padding:50px 0}
+  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;
+    font-family:var(--mono);font-size:11px;color:var(--ink-dim);line-height:1.7}
+  a{color:var(--signal)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
-      <div class="logo">◈</div>
+      <div class="logo">&#9672;</div>
       <div>
-        <h1>Signal Pitch <span class="demo-flag">DEMO · datos simulados</span></h1>
-        <p>MOTOR HÍBRIDO · ESTADÍSTICA + IA · BTTS / OVER-UNDER</p>
+        <h1>Signal Pitch</h1>
+        <p>MOTOR HIBRIDO &middot; ESTADISTICA + INVESTIGACION IA</p>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:14px">
-      <a href="/lab.html" style="font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px">Laboratorio →</a>
-      <div class="clock" id="clock">cargando…</div>
+    <div class="top-actions">
+      <a class="navlink" href="/lab.html">Laboratorio &rarr;</a>
+      <div class="clock" id="clock">cargando...</div>
     </div>
   </header>
-
   <div class="controls">
     <div class="seg" id="marketSeg">
       <button data-m="all" class="on">TODOS</button>
@@ -140,240 +107,108 @@
     </div>
     <div class="spacer"></div>
     <div class="slider-box">
-      <span>SCORE MÍN.</span>
+      <span>SCORE MIN.</span>
       <input type="range" id="thresh" min="0" max="100" value="55" step="5">
       <span class="thresh-val" id="threshVal">55</span>
     </div>
-    <div class="seg" id="sortSeg">
-      <button data-s="score" class="on">↓ SCORE</button>
-      <button data-s="time">↓ HORA</button>
-    </div>
   </div>
-
   <div class="strip" id="strip"></div>
-  <div class="grid" id="grid"></div>
-
+  <div class="grid" id="grid"><div class="loading">Cargando senales...</div></div>
   <footer>
-    <div><b style="color:var(--ink)">Cómo funciona el score:</b> cada partido recibe una puntuación 0–100 por mercado. El motor calcula primero factores estadísticos objetivos (forma, % BTTS histórico, media de goles, solidez defensiva, H2H) y una capa de IA los pondera y redacta el veredicto. En producción, los factores salen de API-Football y el veredicto de tu Claude API (Haiku para el barrido, Sonnet para los partidos top).</div>
-    <div style="margin-top:10px">Esto es una herramienta de análisis informativo, no una recomendación de apuesta ni una garantía de resultado. Las apuestas tienen valor esperado negativo a largo plazo: juega solo lo que puedas permitirte perder. Juego responsable en España: FEJAR · autoprohibición RGIAJ.</div>
+    <div><b style="color:var(--ink)">Como se calcula:</b> cada partido recibe un score 0-100 por mercado. Primero el motor estadistico (forma sobre los ultimos 10 partidos reales), luego -solo en los fuertes- la capa de investigacion con IA que confirma o corrige. El ajuste de la IA se marca en cada card.</div>
+    <div style="margin-top:10px">Herramienta de analisis informativo, no una recomendacion de apuesta ni garantia de resultado. Juega solo lo que puedas permitirte perder. Juego responsable en Espana: FEJAR &middot; autoprohibicion RGIAJ.</div>
   </footer>
 </div>
-
 <script>
-// ---- Reloj ----
 function tick(){
-  const now = new Date();
-  const f = now.toLocaleString('es-ES',{weekday:'long',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-  document.getElementById('clock').innerHTML = 'HORA LOCAL · <b>'+f.toUpperCase()+'</b>';
+  const now=new Date();
+  const f=now.toLocaleString('es-ES',{weekday:'long',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clock').innerHTML='HORA LOCAL &middot; <b>'+f.toUpperCase()+'</b>';
 }
 tick(); setInterval(tick,30000);
 
-// ================================================================
-//  MOTOR DE SCORING HÍBRIDO (réplica funcional del de producción)
-// ================================================================
-// Cada factor devuelve 0..1. Se ponderan según el mercado.
-// En producción, los inputs (gf, ga, bttsRate, etc.) vienen de
-// API-Football; aquí van simulados con la misma forma de datos.
+let ALL = [];
+let state = { market:'all', thresh:55 };
 
-const WEIGHTS = {
-  BTTS:  { attackHome:0.20, attackAway:0.20, leaky:0.25, bttsHist:0.25, h2h:0.10 },
-  OVER:  { goalsAvg:0.35, attackHome:0.15, attackAway:0.15, leaky:0.20, h2h:0.15 },
-  UNDER: { lowGoals:0.40, solidHome:0.20, solidAway:0.20, h2h:0.20 }
-};
-
-function clamp(x){ return Math.max(0, Math.min(1, x)); }
-
-// factores derivados de las stats crudas de cada equipo
-function factors(m){
-  const gfH=m.home.gf, gaH=m.home.ga, gfA=m.away.gf, gaA=m.away.ga;
-  return {
-    attackHome: clamp(gfH/2.2),
-    attackAway: clamp(gfA/2.2),
-    leaky:      clamp(((gaH+gaA)/2)/1.8),
-    solidHome:  clamp(1-(gaH/1.8)),
-    solidAway:  clamp(1-(gaA/1.8)),
-    goalsAvg:   clamp(((gfH+gaH+gfA+gaA)/2)/3.4),
-    lowGoals:   clamp(1-(((gfH+gaH+gfA+gaA)/2)/3.4)),
-    bttsHist:   clamp((m.home.btts+m.away.btts)/2/100),
-    h2h:        clamp(m.h2hGoals/3.2)
-  };
+function scoreColor(s){ return s>=70?'var(--signal)':s>=55?'var(--warn)':'var(--danger)'; }
+function marketLabel(mk){ return mk==='OVER'?'OVER 2.5':mk==='UNDER'?'UNDER 2.5':'BTTS SI'; }
+function fmtKick(utc){
+  try{ const d=new Date(utc.replace(' ','T')+'Z');
+    return d.toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return utc; }
 }
-
-function scoreFor(m, market){
-  const f=factors(m), w=WEIGHTS[market]; let s=0;
-  for(const k in w){ s += (f[k]!==undefined? f[k]:0)*w[k]; }
-  // pequeño ajuste por confianza de muestra (partidos jugados)
-  const conf = clamp(m.played/8);
-  s = s*(0.85+0.15*conf);
-  return Math.round(s*100);
-}
-
-// mejor mercado + desglose para mostrar
-function analyze(m){
-  const markets=['BTTS','OVER','UNDER'].map(mk=>({mk,score:scoreFor(m,mk)}));
-  markets.sort((a,b)=>b.score-a.score);
-  const best=markets[0];
-  const f=factors(m);
-  return { best, all:markets, f };
-}
-
-// ================================================================
-//  DATOS SIMULADOS (estructura = API-Football teams/statistics)
-//  gf = goles a favor/partido, ga = en contra/partido,
-//  btts = % partidos con BTTS, played = jugados, h2hGoals = media H2H
-// ================================================================
-const MATCHES = [
-  { id:1, league:'Champions League · Playoff', kick:'21:00',
-    home:{name:'Lyon', gf:1.9, ga:1.4, btts:70}, away:{name:'Fenerbahçe', gf:2.0, ga:0.7, btts:64},
-    played:8, h2hGoals:2.6 },
-  { id:2, league:'Champions League · Playoff', kick:'21:00',
-    home:{name:'Viking', gf:2.5, ga:1.3, btts:78}, away:{name:'Dinamo Zagreb', gf:2.8, ga:1.1, btts:72},
-    played:7, h2hGoals:4.0 },
-  { id:3, league:'Conference League · Playoff', kick:'21:00',
-    home:{name:'Rapid Viena', gf:1.8, ga:1.0, btts:66}, away:{name:'Hearts', gf:1.5, ga:1.9, btts:74},
-    played:6, h2hGoals:3.1 },
-  { id:4, league:'EFL Cup', kick:'20:45',
-    home:{name:'Preston', gf:1.2, ga:1.6, btts:80}, away:{name:'Everton', gf:1.7, ga:1.0, btts:55},
-    played:5, h2hGoals:2.8 },
-  { id:5, league:'La Liga', kick:'21:30',
-    home:{name:'Getafe', gf:0.9, ga:0.8, btts:38}, away:{name:'Osasuna', gf:1.0, ga:1.1, btts:44},
-    played:8, h2hGoals:1.9 },
-  { id:6, league:'Serie A', kick:'20:45',
-    home:{name:'Atalanta', gf:2.3, ga:1.2, btts:75}, away:{name:'Bologna', gf:1.6, ga:1.3, btts:68},
-    played:8, h2hGoals:3.4 },
-  { id:7, league:'Bundesliga', kick:'18:30',
-    home:{name:'Union Berlin', gf:1.1, ga:1.0, btts:47}, away:{name:'Mainz', gf:1.2, ga:1.2, btts:52},
-    played:7, h2hGoals:2.3 },
-  { id:8, league:'Ligue 1', kick:'19:00',
-    home:{name:'Brest', gf:1.6, ga:1.5, btts:71}, away:{name:'Lens', gf:1.4, ga:0.9, btts:58},
-    played:8, h2hGoals:2.7 },
-];
-
-// veredictos IA simulados (en prod los redacta Claude a partir de los factores)
-function aiNote(m, a){
-  const f=a.f, mk=a.best.mk;
-  const strong = [];
-  if(f.bttsHist>0.68) strong.push('ambos equipos marcan con mucha frecuencia');
-  if(f.leaky>0.6) strong.push('defensas permeables por ambos lados');
-  if(f.goalsAvg>0.7) strong.push('media de goles combinada alta');
-  if(f.h2h>0.75) strong.push('históricos entre ellos muy goleadores');
-  if(f.solidHome>0.6 && f.solidAway>0.6) strong.push('las dos defensas están firmes');
-  const risk = [];
-  if(f.attackAway<0.4) strong.length, risk.push('el visitante genera poco en ataque');
-  if(f.solidAway>0.7 && mk!=='UNDER') risk.push('la solidez defensiva visitante resta valor');
-  if(m.played<6) risk.push('muestra corta de partidos, menos fiable');
-
-  const pro = strong.length? strong.slice(0,2).join(' y ') : 'los indicadores quedan repartidos';
-  const con = risk.length? risk[0] : 'sin banderas rojas claras';
-  const verb = {BTTS:'que ambos marquen', OVER:'un partido de goles (Over 2.5)', UNDER:'un partido cerrado (Under 2.5)'}[mk];
-  return `Se inclina por <b>${verb}</b>: favorece ${pro}. En contra: ${con}.`;
-}
-
-function scoreColor(s){
-  if(s>=70) return 'var(--signal)';
-  if(s>=55) return 'var(--warn)';
-  return 'var(--danger)';
-}
-function barColor(v){
-  if(v>=0.66) return 'var(--signal)';
-  if(v>=0.4) return 'var(--warn)';
-  return 'var(--danger)';
-}
-
-// ---- estado UI ----
-let state = { market:'all', thresh:55, sort:'score' };
-
-function marketLabel(mk){ return mk==='OVER'?'OVER 2.5':mk==='UNDER'?'UNDER 2.5':'BTTS SÍ'; }
-
 function render(){
-  const analyzed = MATCHES.map(m=>({m, a:analyze(m)}));
-
-  // filtrado
-  let list = analyzed.filter(x=>{
-    const passMarket = state.market==='all' ? true : x.a.best.mk===state.market;
-    const relScore = state.market==='all' ? x.a.best.score
-                     : (x.a.all.find(z=>z.mk===state.market)?.score ?? 0);
-    return passMarket && relScore>=state.thresh;
+  let list = ALL.filter(s=>{
+    const passMk = state.market==='all' ? true : s.market===state.market;
+    return passMk && (+s.final_score) >= state.thresh;
   });
-  // para vista "todos" el score de referencia es el best; en mercado fijo, el de ese mercado
-  function refScore(x){ return state.market==='all'? x.a.best.score : x.a.all.find(z=>z.mk===state.market).score; }
-  list.sort((p,q)=> state.sort==='score' ? refScore(q)-refScore(p) : p.m.kick.localeCompare(q.m.kick));
-
-  // strip resumen
-  const allBest = analyzed.map(x=>x.a.best.score);
-  const strong = allBest.filter(s=>s>=70).length;
-  const avg = Math.round(allBest.reduce((a,b)=>a+b,0)/allBest.length);
-  document.getElementById('strip').innerHTML = `
-    <div class="stat"><div class="k">Partidos hoy</div><div class="v">${MATCHES.length}</div></div>
-    <div class="stat"><div class="k">Señales fuertes ≥70</div><div class="v sig">${strong}</div></div>
-    <div class="stat"><div class="k">Score medio</div><div class="v">${avg}</div></div>
-    <div class="stat"><div class="k">Mostradas</div><div class="v">${list.length}</div></div>`;
-
-  // cards
+  list.sort((a,b)=>(+b.final_score)-(+a.final_score));
+  const strong = ALL.filter(s=>(+s.final_score)>=70).length;
+  const withResearch = ALL.filter(s=>s.research_verdict).length;
+  document.getElementById('strip').innerHTML =
+    '<div class="stat"><div class="k">Senales hoy</div><div class="v">'+ALL.length+'</div></div>'+
+    '<div class="stat"><div class="k">Fuertes &ge;70</div><div class="v sig">'+strong+'</div></div>'+
+    '<div class="stat"><div class="k">Investigadas IA</div><div class="v">'+withResearch+'</div></div>'+
+    '<div class="stat"><div class="k">Mostradas</div><div class="v">'+list.length+'</div></div>';
   const grid=document.getElementById('grid');
-  if(!list.length){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--ink-dim);font-family:var(--mono);padding:50px 0">
-    Ningún partido supera el umbral de ${state.thresh}. Baja el score mínimo o cambia de mercado.</div>`; return; }
-
-  grid.innerHTML = list.map(({m,a})=>{
-    const showMk = state.market==='all' ? a.best.mk : state.market;
-    const showScore = state.market==='all' ? a.best.score : a.all.find(z=>z.mk===state.market).score;
-    const f=a.f;
-    // factores a mostrar según mercado
-    const rows = showMk==='UNDER' ? [
-        ['Pocos goles', f.lowGoals],['Local sólido', f.solidHome],['Visit. sólido', f.solidAway],['H2H', 1-f.h2h]
-      ] : showMk==='OVER' ? [
-        ['Media goles', f.goalsAvg],['Ataque local', f.attackHome],['Ataque visit.', f.attackAway],['Defensas', f.leaky]
-      ] : [
-        ['BTTS histórico', f.bttsHist],['Ataque local', f.attackHome],['Ataque visit.', f.attackAway],['Defensas', f.leaky]
-      ];
-    const col=scoreColor(showScore);
-    return `
-    <div class="card">
-      <div class="scoreband"><i style="width:${showScore}%;background:${col};box-shadow:0 0 10px ${col}"></i></div>
-      <div class="card-head">
-        <div>
-          <div class="league">${m.league}</div>
-          <div class="teams">${m.home.name} — ${m.away.name}</div>
-          <div class="kick">KO ${m.kick} · muestra ${m.played} pj</div>
-        </div>
-        <div class="scorecircle" style="border:2px solid ${col};color:${col};box-shadow:0 0 16px ${col}33">
-          ${showScore}<small>SCORE</small>
-        </div>
-      </div>
-      <div class="market-row">
-        <span class="market-tag">${marketLabel(showMk)}</span>
-        <span class="verdict" style="color:${col}">${showScore>=70?'señal fuerte':showScore>=55?'moderada':'débil'}</span>
-      </div>
-      <div class="factors">
-        ${rows.map(([lbl,v])=>`
-          <div class="factor">
-            <span class="fl">${lbl}</span>
-            <div class="bar"><i style="width:${Math.round(v*100)}%;background:${barColor(v)}"></i></div>
-            <span class="fv">${Math.round(v*100)}</span>
-          </div>`).join('')}
-      </div>
-      <div class="ai-note">
-        <span class="ai-badge">IA</span>
-        <p>${aiNote(m,{best:{mk:showMk},f})}</p>
-      </div>
-    </div>`;
+  if(!list.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1">No hay senales que superen el umbral de '+state.thresh+' en este mercado.<br>Baja el score minimo o espera a la proxima jornada.</div>';
+    return;
+  }
+  grid.innerHTML = list.map(function(s){
+    const sc=+s.final_score, col=scoreColor(sc);
+    const adj=s.research_adjustment;
+    let adjHtml='';
+    if(adj!==null && adj!==undefined && (+adj)!==0){
+      const up=(+adj)>0;
+      adjHtml='<span class="adj '+(up?'up':'down')+'">IA '+(up?'+':'')+adj+'</span>';
+    }
+    const research = s.research_verdict
+      ? '<div class="research"><span class="badge">IA</span><p>'+s.research_verdict+'</p></div>' : '';
+    const poly = s.polymarket_url
+      ? '<div class="poly"><a href="'+s.polymarket_url+'" target="_blank" rel="noopener">Ver en Polymarket &#8599;</a></div>' : '';
+    return ''+
+    '<div class="card">'+
+      '<div class="scoreband"><i style="width:'+sc+'%;background:'+col+';box-shadow:0 0 10px '+col+'"></i></div>'+
+      '<div class="card-head">'+
+        '<div>'+
+          '<div class="league">'+(s.league||'')+' '+(s.country?'&middot; '+s.country:'')+'</div>'+
+          '<div class="teams">'+s.home+' &mdash; '+s.away+'</div>'+
+          '<div class="kick">KO '+fmtKick(s.kickoff_utc)+'</div>'+
+        '</div>'+
+        '<div class="scorecircle" style="border:2px solid '+col+';color:'+col+';box-shadow:0 0 16px '+col+'33">'+
+          sc+'<small>SCORE</small>'+
+        '</div>'+
+      '</div>'+
+      '<div class="market-row">'+
+        '<span class="market-tag">'+marketLabel(s.market)+'</span>'+
+        '<span class="verdict" style="color:'+col+'">'+(sc>=70?'senal fuerte':sc>=55?'moderada':'debil')+'</span>'+
+        adjHtml+
+      '</div>'+
+      research+
+      poly+
+    '</div>';
   }).join('');
 }
-
-// ---- listeners ----
-document.getElementById('marketSeg').addEventListener('click',e=>{
+function load(){
+  fetch('/api.php?min=0')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d && d.ok && Array.isArray(d.signals)){ ALL=d.signals; render(); }
+      else { document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1">No se pudieron cargar las senales.</div>'; }
+    })
+    .catch(function(){
+      document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1">Error de conexion con el servidor.</div>';
+    });
+}
+document.getElementById('marketSeg').addEventListener('click',function(e){
   if(e.target.dataset.m){ state.market=e.target.dataset.m;
-    [...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target)); render(); }
+    Array.from(e.currentTarget.children).forEach(function(b){b.classList.toggle('on',b===e.target);}); render(); }
 });
-document.getElementById('sortSeg').addEventListener('click',e=>{
-  if(e.target.dataset.s){ state.sort=e.target.dataset.s;
-    [...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b===e.target)); render(); }
-});
-document.getElementById('thresh').addEventListener('input',e=>{
+document.getElementById('thresh').addEventListener('input',function(e){
   state.thresh=+e.target.value; document.getElementById('threshVal').textContent=e.target.value; render();
 });
-
-render();
+load();
 </script>
 </body>
 </html>
