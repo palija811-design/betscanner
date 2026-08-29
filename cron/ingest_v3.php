@@ -27,6 +27,7 @@ require __DIR__ . '/../src/BlendWeight.php';
 require __DIR__ . '/../src/Scorer.php';
 require __DIR__ . '/../src/ReasoningScorer.php';
 require __DIR__ . '/../src/PolymarketLink.php';
+require __DIR__ . '/../src/OddsFetcher.php';
 
 use SignalPitch\Db;
 use SignalPitch\ApiFootball;
@@ -35,12 +36,14 @@ use SignalPitch\Scorer;
 use SignalPitch\BlendWeight;
 use SignalPitch\ReasoningScorer;
 use SignalPitch\PolymarketLink;
+use SignalPitch\OddsFetcher;
 
 $cfg = require __DIR__ . '/../config/config.php';
 $pdo = Db::conn($cfg['db']);
 $api = new ApiFootball($pdo, $cfg['apifootball']);
 $form = new RecentForm($api, $cfg['apifootball']['season'], 10);
 $reasoner = new ReasoningScorer($cfg['claude']);
+$oddsFetcher = new OddsFetcher($api);
 $season = $cfg['apifootball']['season'];
 $today  = gmdate('Y-m-d');
 
@@ -127,6 +130,11 @@ foreach ($leagues as $lg) {
             }
         }
 
+        // Cuotas del partido (se guardan y se muestran, NO influyen en el score)
+        $odds = [];
+        try { $api->pace(); $odds = $oddsFetcher->forFixture($fixtureId); }
+        catch (Throwable $e) { /* sin cuotas, seguimos */ }
+
         // Guarda CADA mercado que supere el umbral de guardado (no solo el mejor)
         foreach (['BTTS','OVER','UNDER'] as $mk) {
             $statScore = $analysis['markets'][$mk];
@@ -143,20 +151,23 @@ foreach ($leagues as $lg) {
                 $model = $useTop ? 'sonnet+web' : 'haiku+web';
             }
             $conf = Scorer::confidence($finalScore);
+            $mktOdds = $odds[$mk] ?? null;
             $pdo->prepare("INSERT INTO signals
                   (fixture_id, market, stat_score, ai_score, final_score, confidence,
-                   factors_json, ai_verdict, ai_risk, research_verdict, research_adjustment, model_used)
-                VALUES (:fx,:mk,:ss,:as,:fs,:cf,:fj,:vd,:rk,:rv,:radj,:md)
+                   factors_json, ai_verdict, ai_risk, research_verdict, research_adjustment, model_used, odds, odds_source)
+                VALUES (:fx,:mk,:ss,:as,:fs,:cf,:fj,:vd,:rk,:rv,:radj,:md,:od,:osrc)
                 ON DUPLICATE KEY UPDATE
                   stat_score=VALUES(stat_score), final_score=VALUES(final_score),
                   confidence=VALUES(confidence), factors_json=VALUES(factors_json),
                   research_verdict=VALUES(research_verdict), research_adjustment=VALUES(research_adjustment),
-                  model_used=VALUES(model_used), computed_at=CURRENT_TIMESTAMP")
+                  model_used=VALUES(model_used), odds=VALUES(odds), odds_source=VALUES(odds_source),
+                  computed_at=CURRENT_TIMESTAMP")
                 ->execute([
                     ':fx'=>$fixtureId, ':mk'=>$mk, ':ss'=>$statScore,
                     ':as'=>$finalScore, ':fs'=>$finalScore, ':cf'=>$conf,
                     ':fj'=>json_encode($analysis['factors'], JSON_UNESCAPED_UNICODE),
                     ':vd'=>null, ':rk'=>null, ':rv'=>$rv, ':radj'=>$radj, ':md'=>$model,
+                    ':od'=>$mktOdds, ':osrc'=>$mktOdds?'apifootball':null,
                 ]);
             $total++;
         }
