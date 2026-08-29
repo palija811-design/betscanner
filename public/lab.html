@@ -5,267 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Betscanner — Laboratorio de estrategias</title>
 <style>
-  :root {
-    --bg:#0a0e0d; --panel:#111917; --panel-2:#16211e; --line:#223330;
-    --ink:#e6f0ec; --ink-dim:#7d938c; --signal:#3ef2a1; --signal-dim:#1c8f5e;
-    --warn:#ffcc4d; --danger:#ff6b6b; --gold:#f5c451;
+  :root{--bg:#0a0e0d;--panel:#111917;--panel-2:#16211e;--line:#223330;--ink:#e6f0ec;
+    --ink-dim:#7d938c;--signal:#3ef2a1;--signal-dim:#1c8f5e;--warn:#ffcc4d;--danger:#ff6b6b;
     --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
-    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  }
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;
-    background-image:radial-gradient(circle at 15% 0%,rgba(62,242,161,0.06),transparent 40%),
-    radial-gradient(circle at 85% 100%,rgba(62,242,161,0.04),transparent 40%)}
-  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
-
-  header{display:flex;align-items:flex-end;justify-content:space-between;
-    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;flex-wrap:wrap;gap:16px}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;flex-wrap:wrap;gap:12px}
   .brand{display:flex;align-items:center;gap:14px}
-  .logo{width:42px;height:42px;border:1.5px solid var(--signal);border-radius:10px;display:grid;
-    place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:20px;
-    box-shadow:0 0 18px rgba(62,242,161,0.25) inset}
-  .brand h1{font-size:19px;letter-spacing:-0.02em;font-weight:700}
-  .brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;margin-top:2px}
-  .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;
-    border:1px solid var(--line);border-radius:8px;padding:8px 14px;transition:.15s}
+  .logo{width:42px;height:42px;border:1.5px solid var(--signal);border-radius:10px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:20px}
+  .brand h1{font-size:18px}.brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:2px}
+  .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-left:8px}
   .navlink:hover{color:var(--signal);border-color:var(--signal-dim)}
-
-  .demo-flag{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--warn);
-    border:1px solid var(--warn);border-radius:5px;padding:2px 7px;margin-left:8px;letter-spacing:0.05em}
-
-  /* KPIs */
-  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .stat .k{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;text-transform:uppercase}
-  .stat .v{font-size:26px;font-weight:700;margin-top:6px;font-family:var(--mono)}
-  .stat .v.sig{color:var(--signal)} .stat .v.gold{color:var(--gold)}
+  .runbtn{background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:9px 15px;cursor:pointer}
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
   @media(max-width:720px){.strip{grid-template-columns:repeat(2,1fr)}}
-
-  .section-title{font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:0.08em;
-    text-transform:uppercase;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
-  .section-title::after{content:"";flex:1;height:1px;background:var(--line)}
-
-  /* Tabla ranking */
-  .table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  table{width:100%;border-collapse:collapse;font-size:13.5px}
-  thead th{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);text-transform:uppercase;
-    letter-spacing:0.05em;text-align:right;padding:13px 14px;border-bottom:1px solid var(--line);font-weight:600}
-  thead th:first-child,tbody td:first-child{text-align:left}
-  tbody td{padding:13px 14px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono)}
-  tbody tr:last-child td{border-bottom:none}
-  tbody tr:hover{background:var(--panel-2)}
-  tbody tr.champion{background:rgba(245,196,81,0.06)}
-  tbody tr.champion:hover{background:rgba(245,196,81,0.1)}
-  .stratname{font-family:var(--sans);font-weight:600;color:var(--ink)}
-  .badge{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;margin-left:7px;letter-spacing:0.04em;vertical-align:middle}
-  .badge.ai{background:rgba(62,242,161,0.12);color:var(--signal);border:1px solid var(--signal-dim)}
-  .badge.champ{background:var(--gold);color:#1a1400;font-weight:700}
-  .badge.ctrl{background:rgba(125,147,140,0.15);color:var(--ink-dim);border:1px solid var(--line)}
-  .roi-pos{color:var(--signal)} .roi-neg{color:var(--danger)} .muted{color:var(--ink-dim)}
-  .hitbar{display:inline-block;width:52px;height:6px;background:var(--panel-2);border-radius:3px;
-    overflow:hidden;margin-left:8px;vertical-align:middle}
-  .hitbar i{display:block;height:100%}
-  .samplewarn{color:var(--warn);font-size:10px;font-family:var(--mono)}
-
-  /* Linaje */
-  .lineage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
-  .tree-node{display:flex;align-items:center;gap:10px;padding:7px 0;font-family:var(--mono);font-size:12.5px}
-  .tree-node .pipe{color:var(--line)}
-  .tree-node .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  .tree-node .lbl{color:var(--ink)}
-  .tree-node .meta{color:var(--ink-dim);font-size:11px}
-
-  /* Breakdown */
-  .bd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  @media(max-width:760px){.bd-grid{grid-template-columns:1fr}}
-  .bd-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .bd-card h4{font-family:var(--mono);font-size:12px;color:var(--signal);margin-bottom:12px;letter-spacing:0.05em}
-  .bd-row{display:grid;grid-template-columns:60px 1fr 46px;gap:10px;align-items:center;
-    font-family:var(--mono);font-size:11px;padding:5px 0}
-  .bd-row .band{color:var(--ink-dim)}
-  .bd-row .bar{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden}
-  .bd-row .bar i{display:block;height:100%}
-  .bd-row .pct{text-align:right;color:var(--ink)}
-
-  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;
-    font-family:var(--mono);font-size:11px;color:var(--ink-dim);line-height:1.7}
-  .loading{text-align:center;color:var(--ink-dim);font-family:var(--mono);padding:50px 0}
-  a{color:var(--signal)}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat .k{font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.05em}
+  .stat .v{font-size:24px;font-weight:700;margin-top:6px;font-family:var(--mono)}
+  .stat .v.sig{color:var(--signal)}
+  .section-title{font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:0.08em;text-transform:uppercase;margin:26px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;font-size:13px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.05em}
+  td{font-family:var(--mono)}
+  tr:last-child td{border-bottom:none}
+  .champ{color:var(--signal)}
+  .pos{color:var(--signal)}.neg{color:var(--danger)}
+  .badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;background:rgba(62,242,161,0.12);color:var(--signal);margin-left:6px}
+  .badge.ai{background:rgba(255,204,77,0.12);color:var(--warn)}
+  .empty{text-align:center;color:var(--ink-dim);font-family:var(--mono);font-size:13px;padding:34px}
+  .aviso{background:rgba(255,204,77,0.08);border:1px solid rgba(255,204,77,0.3);color:var(--warn);font-family:var(--mono);font-size:12px;padding:12px 16px;border-radius:10px;margin-bottom:20px;line-height:1.5}
+  #runMsg{font-family:var(--mono);font-size:12px;padding:12px 14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--line);display:none}
+  .disc{font-family:var(--mono);font-size:10px;color:var(--ink-dim);line-height:1.6;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
-      <div class="logo">◈</div>
-      <div>
-        <h1>Laboratorio de estrategias <span class="demo-flag">DEMO · datos simulados</span></h1>
-        <p>CAMPEONATO DE MODELOS · ACIERTO + ROI · EVOLUCIÓN CONTINUA</p>
-      </div>
+      <div class="logo">&#9672;</div>
+      <div><h1>Laboratorio de estrategias</h1><p>CAMPEONATO DE MODELOS &middot; ACIERTO + ROI</p></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
-      <button id="runBtn" onclick="runStrategies()" style="background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:9px 15px;cursor:pointer">&#9654; Lanzar estrategias hoy</button>
-      <a class="navlink" href="/index.html">&larr; Se&ntilde;ales del d&iacute;a</a>
+      <button class="runbtn" id="runBtn" onclick="runStrategies()">&#9654; Lanzar estrategias hoy</button>
+      <a class="navlink" href="/index.html">&larr; Se&ntilde;ales</a>
+      <a class="navlink" href="/estadisticas.html">Estad&iacute;sticas</a>
     </div>
   </header>
 
-  <div id="runMsg" style="display:none;font-family:var(--mono);font-size:12px;padding:12px 14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--line)"></div>
-
+  <div id="runMsg"></div>
+  <div id="aviso"></div>
   <div class="strip" id="strip"></div>
 
-  <div class="section-title">Ranking de estrategias</div>
+  <div class="section-title">Ranking de estrategias (por ROI)</div>
   <div class="table-wrap">
     <table id="rankTable">
-      <thead>
-        <tr>
-          <th>Estrategia</th><th>Picks</th><th>Acierto</th><th>ROI</th><th>Beneficio</th><th>Estado</th>
-        </tr>
-      </thead>
-      <tbody id="rankBody"><tr><td colspan="6" class="loading">Cargando rendimiento…</td></tr></tbody>
+      <thead><tr>
+        <th>Estrategia</th><th>Apuestas</th><th>Aciertos</th><th>% acierto</th><th>ROI</th><th>Beneficio</th>
+      </tr></thead>
+      <tbody></tbody>
     </table>
   </div>
 
-  <div class="section-title">Linaje · quién nació de quién</div>
-  <div class="lineage" id="lineage"></div>
+  <div class="section-title">Desglose por banda de score</div>
+  <div class="table-wrap">
+    <table id="bdTable">
+      <thead><tr>
+        <th>Estrategia</th><th>Mercado</th><th>Banda</th><th>Apuestas</th><th>% acierto</th><th>ROI</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <div class="section-title">Dónde acierta la campeona · por mercado y tramo</div>
-  <div class="bd-grid" id="breakdown"></div>
-
-  <footer>
-    <div><b style="color:var(--ink)">Cómo leer esto:</b> cada estrategia puntúa los mismos partidos. El <b>acierto</b> es el % de picks jugados que salieron bien; el <b>ROI</b> es el beneficio por pick a stake 1 (incluye la cuota). La campeona (dorada) es la que alimenta el dashboard de señales. Las estrategias con pocos picks llevan aviso: su número aún es ruido.</div>
-    <div style="margin-top:10px">Herramienta de análisis informativo, no consejo de apuesta ni garantía de resultado. Que una estrategia gane en el histórico no asegura que lo mantenga (sobreajuste). Juego responsable en España: FEJAR · autoprohibición RGIAJ.</div>
-  </footer>
+  <div class="disc">Rendimiento real sobre predicciones ya liquidadas, con cuotas reales (incluye la ventaja de la casa). Con pocas apuestas, las cifras son ruido, no conclusiones: hacen falta cientos para fiarse. Herramienta informativa, no recomendacion. Juego responsable en Espana: FEJAR - autoprohibicion RGIAJ.</div>
 </div>
 
 <script>
-// ============================================================
-//  DATOS DEMO — misma forma que devuelve performance.php
-//  En producción: const data = await (await fetch('/performance.php')).json();
-// ============================================================
-const DEMO = {
-  ok:true,
-  strategies:[
-    {id:1, code:'baseline',        name:'Baseline híbrida',     origin:'manual', parent_id:null, is_champion:0, is_active:1},
-    {id:2, code:'stat_pure',       name:'Estadística pura',     origin:'manual', parent_id:null, is_champion:0, is_active:1},
-    {id:3, code:'reasoning_ai',    name:'Razonamiento IA',      origin:'manual', parent_id:null, is_champion:1, is_active:1},
-    {id:4, code:'hybrid_strict',   name:'Híbrida exigente',     origin:'manual', parent_id:1,    is_champion:0, is_active:1},
-    {id:5, code:'btts_hist_heavy', name:'BTTS histórico-pesado',origin:'manual', parent_id:1,    is_champion:0, is_active:1},
-    {id:6, code:'ai_overtune_4471',name:'Over afinada (IA)',    origin:'ai',     parent_id:4,    is_champion:0, is_active:1},
-    {id:7, code:'ai_lowline_5522', name:'Umbral bajo (IA)',     origin:'ai',     parent_id:1,    is_champion:0, is_active:0},
-  ],
-  performance:[
-    {strategy_id:3, code:'reasoning_ai',    name:'Razonamiento IA',      origin:'manual', is_champion:1, picks_settled:214, wins:139, losses:75, hit_rate:65.0, total_profit:22.4, roi_pct:10.5},
-    {strategy_id:6, code:'ai_overtune_4471',name:'Over afinada (IA)',    origin:'ai',     is_champion:0, picks_settled:96,  wins:60,  losses:36, hit_rate:62.5, total_profit:8.1,  roi_pct:8.4},
-    {strategy_id:1, code:'baseline',        name:'Baseline híbrida',     origin:'manual', is_champion:0, picks_settled:240, wins:146, losses:94, hit_rate:60.8, total_profit:12.0, roi_pct:5.0},
-    {strategy_id:4, code:'hybrid_strict',   name:'Híbrida exigente',     origin:'manual', is_champion:0, picks_settled:132, wins:82,  losses:50, hit_rate:62.1, total_profit:5.3,  roi_pct:4.0},
-    {strategy_id:5, code:'btts_hist_heavy', name:'BTTS histórico-pesado',origin:'manual', is_champion:0, picks_settled:198, wins:114, losses:84, hit_rate:57.6, total_profit:1.2,  roi_pct:0.6},
-    {strategy_id:2, code:'stat_pure',       name:'Estadística pura',     origin:'manual', is_champion:0, picks_settled:240, wins:132, losses:108,hit_rate:55.0, total_profit:-6.5, roi_pct:-2.7},
-    {strategy_id:7, code:'ai_lowline_5522', name:'Umbral bajo (IA)',     origin:'ai',     is_champion:0, picks_settled:71,  wins:36,  losses:35, hit_rate:50.7, total_profit:-8.9, roi_pct:-12.5},
-  ],
-  breakdown:[
-    {strategy_id:3, code:'reasoning_ai', market:'BTTS', score_band:'80-100', n:34, hit_rate:73.5, roi_pct:18.2},
-    {strategy_id:3, code:'reasoning_ai', market:'BTTS', score_band:'70-79',  n:41, hit_rate:65.9, roi_pct:11.0},
-    {strategy_id:3, code:'reasoning_ai', market:'BTTS', score_band:'60-69',  n:28, hit_rate:57.1, roi_pct:2.1},
-    {strategy_id:3, code:'reasoning_ai', market:'OVER', score_band:'80-100', n:22, hit_rate:68.2, roi_pct:14.0},
-    {strategy_id:3, code:'reasoning_ai', market:'OVER', score_band:'70-79',  n:30, hit_rate:60.0, roi_pct:6.3},
-    {strategy_id:3, code:'reasoning_ai', market:'OVER', score_band:'60-69',  n:19, hit_rate:52.6, roi_pct:-1.8},
-    {strategy_id:3, code:'reasoning_ai', market:'UNDER',score_band:'70-79',  n:12, hit_rate:58.3, roi_pct:4.4},
-    {strategy_id:3, code:'reasoning_ai', market:'UNDER',score_band:'60-69',  n:16, hit_rate:56.3, roi_pct:1.2},
-  ]
-};
+function pos(n){ return (+n)>=0?'pos':'neg'; }
+function fmtRoi(n){ return ((+n)>=0?'+':'')+(+n)+'%'; }
 
-const MIN_SAMPLE = 60; // umbral de muestra fiable (coincide con evolve.php)
+function render(d){
+  var perf = d.performance||[];
+  var bd = d.breakdown||[];
 
-function roiClass(v){ return v>=0?'roi-pos':'roi-neg'; }
-function hitColor(h){ if(h>=63)return 'var(--signal)'; if(h>=55)return 'var(--warn)'; return 'var(--danger)'; }
+  // aviso de fiabilidad segun total de apuestas
+  var totBets = perf.reduce(function(s,p){return s+(+p.picks_settled||0);},0);
+  document.getElementById('aviso').innerHTML = totBets < 100
+    ? '<div class="aviso">Solo '+totBets+' apuestas liquidadas en total. Estas cifras son orientativas: con tan pocas, un ROI alto puede ser simple suerte. Hacen falta cientos para que signifiquen algo.</div>'
+    : '';
 
-function render(data){
-  const perf = data.performance.slice().sort((a,b)=>b.roi_pct-a.roi_pct);
+  // strip resumen
+  var champ = perf.find(function(p){return p.is_champion==1;}) || perf[0] || {};
+  var best = perf[0] || {};
+  document.getElementById('strip').innerHTML =
+    '<div class="stat"><div class="k">Estrategias</div><div class="v">'+perf.length+'</div></div>'+
+    '<div class="stat"><div class="k">Apuestas totales</div><div class="v">'+totBets+'</div></div>'+
+    '<div class="stat"><div class="k">Mejor ROI</div><div class="v sig">'+(best.roi_pct!==undefined?fmtRoi(best.roi_pct):'-')+'</div></div>'+
+    '<div class="stat"><div class="k">Campeona</div><div class="v" style="font-size:15px">'+(champ.name||'-')+'</div></div>';
 
-  // KPIs
-  const champ = perf.find(p=>p.is_champion) || perf[0];
-  const activeCount = data.strategies.filter(s=>s.is_active).length;
-  const aiCount = data.strategies.filter(s=>s.origin==='ai').length;
-  const totalPicks = perf.reduce((a,b)=>a+(+b.picks_settled),0);
-  document.getElementById('strip').innerHTML = `
-    <div class="stat"><div class="k">Campeona actual</div><div class="v gold" style="font-size:18px;margin-top:9px">${champ.name}</div></div>
-    <div class="stat"><div class="k">ROI campeona</div><div class="v sig">${champ.roi_pct>=0?'+':''}${champ.roi_pct}%</div></div>
-    <div class="stat"><div class="k">Estrategias activas</div><div class="v">${activeCount}<span style="font-size:13px;color:var(--ink-dim)"> · ${aiCount} IA</span></div></div>
-    <div class="stat"><div class="k">Picks evaluados</div><div class="v">${totalPicks}</div></div>`;
+  // ranking
+  var rt=document.querySelector('#rankTable tbody');
+  if(perf.length){
+    rt.innerHTML=perf.map(function(p){
+      var badge = p.is_champion==1 ? '<span class="badge">CAMPEONA</span>' : (p.origin==='ai'?'<span class="badge ai">IA</span>':'');
+      return '<tr><td>'+p.name+badge+'</td><td>'+p.picks_settled+'</td><td>'+p.wins+'</td>'+
+        '<td>'+(p.hit_rate||0)+'%</td><td class="'+pos(p.roi_pct)+'">'+fmtRoi(p.roi_pct)+'</td>'+
+        '<td class="'+pos(p.total_profit)+'">'+((+p.total_profit>=0?'+':'')+(p.total_profit||0))+'</td></tr>';
+    }).join('');
+  } else { rt.innerHTML='<tr><td colspan="6" class="empty">Aun no hay predicciones liquidadas. Lanza las estrategias y espera a que se jueguen los partidos.</td></tr>'; }
 
-  // Ranking
-  document.getElementById('rankBody').innerHTML = perf.map(p=>{
-    const low = (+p.picks_settled) < MIN_SAMPLE;
-    const originBadge = p.is_champion ? '<span class="badge champ">CAMPEONA</span>'
-      : p.origin==='ai' ? '<span class="badge ai">IA</span>'
-      : p.code==='stat_pure' ? '<span class="badge ctrl">CONTROL</span>' : '';
-    const active = data.strategies.find(s=>s.strategy_id===p.strategy_id||s.id===p.strategy_id);
-    const inactive = active && !active.is_active;
-    return `<tr class="${p.is_champion?'champion':''}">
-      <td><span class="stratname">${p.name}</span>${originBadge}${inactive?'<span class="badge ctrl">PODADA</span>':''}</td>
-      <td>${p.picks_settled}${low?'<div class="samplewarn">muestra baja</div>':''}</td>
-      <td>${p.hit_rate}%<span class="hitbar"><i style="width:${p.hit_rate}%;background:${hitColor(p.hit_rate)}"></i></span></td>
-      <td class="${roiClass(p.roi_pct)}">${p.roi_pct>=0?'+':''}${p.roi_pct}%</td>
-      <td class="${roiClass(p.total_profit)}">${p.total_profit>=0?'+':''}${p.total_profit}u</td>
-      <td class="muted">${inactive?'inactiva':'activa'}</td>
-    </tr>`;
-  }).join('');
-
-  // Linaje
-  const byParent = {};
-  data.strategies.forEach(s=>{ const k=s.parent_id??'root'; (byParent[k]=byParent[k]||[]).push(s); });
-  function perfOf(id){ return data.performance.find(p=>p.strategy_id===id); }
-  function dotColor(s){ if(s.is_champion)return 'var(--gold)'; if(!s.is_active)return 'var(--danger)'; if(s.origin==='ai')return 'var(--signal)'; return 'var(--ink-dim)'; }
-  function nodeHtml(s, depth){
-    const pf = perfOf(s.id);
-    const roi = pf? `<span class="${roiClass(pf.roi_pct)}">${pf.roi_pct>=0?'+':''}${pf.roi_pct}% ROI</span>` : '<span class="meta">sin datos</span>';
-    const pipes = depth>0 ? '<span class="pipe">'+'└─'.padStart(depth*3,' ')+'</span>' : '';
-    const kids = (byParent[s.id]||[]).map(k=>nodeHtml(k, depth+1)).join('');
-    return `<div class="tree-node" style="padding-left:${depth*22}px">
-      ${pipes}<span class="dot" style="background:${dotColor(s)}"></span>
-      <span class="lbl">${s.name}</span>
-      <span class="meta">· ${s.origin==='ai'?'propuesta por IA':'manual'} · ${roi}${s.is_champion?' · 👑':''}${!s.is_active?' · podada':''}</span>
-    </div>${kids}`;
-  }
-  document.getElementById('lineage').innerHTML = (byParent['root']||[]).map(s=>nodeHtml(s,0)).join('');
-
-  // Breakdown de la campeona por mercado
-  const champBd = data.breakdown.filter(b=>b.strategy_id===champ.strategy_id);
-  const markets=['BTTS','OVER','UNDER'];
-  document.getElementById('breakdown').innerHTML = markets.map(mk=>{
-    const rows = champBd.filter(b=>b.market===mk).sort((a,b)=>b.score_band.localeCompare(a.score_band));
-    if(!rows.length) return '';
-    return `<div class="bd-card"><h4>${mk==='OVER'?'OVER 2.5':mk==='UNDER'?'UNDER 2.5':'BTTS'}</h4>
-      ${rows.map(r=>`<div class="bd-row">
-        <span class="band">${r.score_band}</span>
-        <div class="bar"><i style="width:${r.hit_rate}%;background:${hitColor(r.hit_rate)}"></i></div>
-        <span class="pct">${r.hit_rate}%</span>
-      </div>`).join('')}
-      <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-top:8px">n por tramo · % acierto</div>
-    </div>`;
-  }).join('');
+  // breakdown
+  var bt=document.querySelector('#bdTable tbody');
+  if(bd.length){
+    bt.innerHTML=bd.map(function(b){
+      return '<tr><td>'+(b.code||b.strategy_id)+'</td><td>'+b.market+'</td><td>'+b.score_band+'</td>'+
+        '<td>'+b.n+'</td><td>'+(b.hit_rate||0)+'%</td><td class="'+pos(b.roi_pct)+'">'+fmtRoi(b.roi_pct)+'</td></tr>';
+    }).join('');
+  } else { bt.innerHTML='<tr><td colspan="6" class="empty">Sin desglose todavia.</td></tr>'; }
 }
 
-// En producción, sustituye por el fetch real:
-// fetch('/performance.php').then(r=>r.json()).then(render).catch(()=>{
-//   document.getElementById('rankBody').innerHTML='<tr><td colspan=6 class="loading">No se pudo cargar el rendimiento.</td></tr>';
-// });
-fetch('/performance.php').then(r=>r.json()).then(d=>{ if(d&&d.ok&&d.performance&&d.performance.length) render(d); else render(DEMO); }).catch(()=>render(DEMO));
+function load(){
+  fetch('/performance.php').then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok){ render(d); }
+    else { document.getElementById('aviso').innerHTML='<div class="aviso">No se pudo cargar el rendimiento.</div>'; }
+  }).catch(function(){ document.getElementById('aviso').innerHTML='<div class="aviso">Error de conexion.</div>'; });
+}
+
 function runStrategies(){
-  const btn=document.getElementById('runBtn');
-  const msg=document.getElementById('runMsg');
-  btn.disabled=true; btn.innerHTML='&#9654; Analizando... (puede tardar 1-2 min)';
+  var btn=document.getElementById('runBtn');
+  var msg=document.getElementById('runMsg');
+  btn.disabled=true; btn.innerHTML='&#9654; Analizando... (1-2 min)';
   msg.style.display='block'; msg.style.borderColor='var(--line)'; msg.style.color='var(--ink-dim)';
-  msg.textContent='Las estrategias estan puntuando los partidos de hoy. Esto puede tardar un par de minutos...';
+  msg.textContent='Las estrategias estan puntuando los partidos de hoy...';
   fetch('/run_strategies.php').then(function(r){return r.json();}).then(function(d){
     btn.disabled=false; btn.innerHTML='&#9654; Lanzar estrategias hoy';
-    if(d.ok){
-      msg.style.borderColor='var(--signal-dim)'; msg.style.color='var(--signal)';
-      msg.textContent=d.msg||('Listo: '+d.partidos+' partidos puntuados.');
-    } else { msg.style.color='var(--danger)'; msg.textContent='Error: '+(d.error||'no se pudo'); }
+    if(d.ok){ msg.style.borderColor='var(--signal-dim)'; msg.style.color='var(--signal)';
+      msg.textContent=d.msg||('Listo: '+d.partidos+' partidos puntuados.'); load(); }
+    else { msg.style.color='var(--danger)'; msg.textContent='Error: '+(d.error||'no se pudo'); }
   }).catch(function(){ btn.disabled=false; btn.innerHTML='&#9654; Lanzar estrategias hoy';
     msg.style.color='var(--danger)'; msg.textContent='Error de conexion.'; });
 }
+
+load();
 </script>
 </body>
 </html>
