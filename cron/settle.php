@@ -36,6 +36,10 @@ function marketHit(string $market, int $h, int $a): bool {
         'BTTS'  => $h > 0 && $a > 0,
         'OVER'  => $total >= 3,   // Over 2.5
         'UNDER' => $total <= 2,   // Under 2.5
+        'HOME'  => $h > $a,       // gana el local
+        'AWAY'  => $a > $h,       // gana el visitante
+        'DC_1X' => $h >= $a,      // local o empate
+        'DC_X2' => $a >= $h,      // visitante o empate
         default => false,
     };
 }
@@ -111,6 +115,20 @@ foreach ($rows as $fx) {
         )->execute([':o'=>$outcome, ':pf'=>$profit, ':id'=>(int)$p['id']]);
         $settled++;
     }
+    // liquida también las SEÑALES del dashboard (tabla signals)
+    $sigs = $pdo->prepare(
+        "SELECT id, market, odds FROM signals WHERE fixture_id=:f AND outcome='pending'"
+    );
+    $sigs->execute([':f'=>$fixtureId]);
+    foreach ($sigs->fetchAll() as $s) {
+        $hit = marketHit($s['market'], $hg, $ag);
+        $odds = $s['odds'] !== null ? (float)$s['odds'] : 1.90;
+        $profit = $hit ? round($odds - 1, 2) : -1.0;
+        $pdo->prepare(
+            "UPDATE signals SET outcome=:o, profit=:pf, settled_at=UTC_TIMESTAMP() WHERE id=:id"
+        )->execute([':o'=>$hit?'win':'loss', ':pf'=>$profit, ':id'=>(int)$s['id']]);
+    }
+
     logln("fixture $fixtureId: {$hg}-{$ag} liquidado");
 }
 
