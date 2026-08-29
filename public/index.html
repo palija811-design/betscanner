@@ -107,6 +107,7 @@
       <button data-m="UNDER">UNDER 2.5</button>
     </div>
     <div class="spacer"></div>
+    <button id="refreshBtn" onclick="refreshMissing()" style="background:transparent;color:var(--signal);border:1px solid var(--signal-dim);border-radius:8px;font-family:var(--mono);font-size:12px;padding:8px 14px;cursor:pointer">&#8635; Buscar partidos nuevos</button>
     <div class="slider-box">
       <span>SCORE MIN.</span>
       <input type="range" id="thresh" min="0" max="100" value="55" step="5">
@@ -168,6 +169,7 @@ function render(){
       ? '<div class="research"><span class="badge">IA</span><p>'+s.research_verdict+'</p></div>' : '';
     const poly = s.polymarket_url
       ? '<div class="poly"><a href="'+s.polymarket_url+'" target="_blank" rel="noopener">Ver en Polymarket &#8599;</a></div>' : '';
+    const oddsHtml = s.odds ? '<span style="font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-left:6px">cuota '+s.odds+'</span>' : '';
     return ''+
     '<div class="card">'+
       '<div class="scoreband"><i style="width:'+sc+'%;background:'+col+';box-shadow:0 0 10px '+col+'"></i></div>'+
@@ -182,7 +184,7 @@ function render(){
         '</div>'+
       '</div>'+
       '<div class="market-row">'+
-        '<span class="market-tag">'+marketLabel(s.market)+'</span>'+
+        '<span class="market-tag">'+marketLabel(s.market)+'</span>'+oddsHtml+
         '<span class="verdict" style="color:'+col+'">'+(sc>=70?'senal fuerte':sc>=55?'moderada':'debil')+'</span>'+
         adjHtml+
       '</div>'+
@@ -202,6 +204,18 @@ function load(){
       document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1">Error de conexion con el servidor.</div>';
     });
 }
+function refreshMissing(){
+  const btn=document.getElementById('refreshBtn');
+  btn.disabled=true; btn.textContent='Buscando... (puede tardar)';
+  fetch('/refresh.php').then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false; btn.innerHTML='&#8635; Buscar partidos nuevos';
+    if(d.ok){
+      alert('Listo: '+d.nuevos+' partidos nuevos analizados, '+d.reinvestigados+' actualizados (inminentes), '+d.ya_estaban+' ya estaban.');
+      load();
+    } else { alert('Error: '+(d.error||'no se pudo')); }
+  }).catch(function(){ btn.disabled=false; btn.innerHTML='&#8635; Buscar partidos nuevos'; alert('Error de conexion.'); });
+}
+
 document.getElementById('marketSeg').addEventListener('click',function(e){
   if(e.target.dataset.m){ state.market=e.target.dataset.m;
     Array.from(e.currentTarget.children).forEach(function(b){b.classList.toggle('on',b===e.target);}); render(); }
