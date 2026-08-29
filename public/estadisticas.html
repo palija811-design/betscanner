@@ -56,6 +56,7 @@
       <div><h1>Estadisticas y simulador</h1><p>RENDIMIENTO REAL SOBRE APUESTAS LIQUIDADAS</p></div>
     </div>
     <div>
+      <button id="settleBtn" onclick="settleNow()" style="background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer">&#8635; Actualizar resultados</button>
       <a class="navlink" href="/index.html">Se&ntilde;ales</a>
       <a class="navlink" href="/lab.html">Laboratorio</a>
     </div>
@@ -152,6 +153,15 @@ function load(){
       }).join('');
     } else { lt.innerHTML='<tr><td colspan="5" class="empty">Las estrategias aun no tienen apuestas liquidadas.</td></tr>'; }
   }).catch(function(){ document.getElementById('aviso').innerHTML='<div class="aviso">Error de conexion.</div>'; });
+}
+function settleNow(){
+  const btn=document.getElementById('settleBtn');
+  btn.disabled=true; btn.innerHTML='&#8635; Actualizando... (puede tardar)';
+  fetch('/settle_now.php').then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false; btn.innerHTML='&#8635; Actualizar resultados';
+    if(d.ok){ alert(d.msg||'Actualizado.'); load(); }
+    else { alert('Error: '+(d.error||'no se pudo')); }
+  }).catch(function(){ btn.disabled=false; btn.innerHTML='&#8635; Actualizar resultados'; alert('Error de conexion.'); });
 }
 load();
 </script>
