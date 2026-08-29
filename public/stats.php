@@ -23,6 +23,31 @@ $cfg = require __DIR__ . '/../config/config.php';
 
 $stake = isset($_GET['stake']) ? max(0.5, min(10000, (float)$_GET['stake'])) : 10.0;
 
+// filtros opcionales del simulador
+$fMarkets = isset($_GET['markets']) && $_GET['markets'] !== ''
+    ? array_intersect(explode(',', strtoupper($_GET['markets'])), ['BTTS','OVER','UNDER','HOME','AWAY','DC_1X','DC_X2'])
+    : [];
+$fBandas = isset($_GET['bandas']) && $_GET['bandas'] !== ''
+    ? array_intersect(explode(',', strtolower($_GET['bandas'])), ['fuerte','moderada','debil'])
+    : [];
+
+// construye el WHERE del simulador según los filtros
+function bandaSql(array $bandas): string {
+    if (!$bandas) return '';
+    $conds = [];
+    foreach ($bandas as $b) {
+        if ($b==='fuerte')   $conds[] = 'final_score>=70';
+        if ($b==='moderada') $conds[] = '(final_score>=55 AND final_score<70)';
+        if ($b==='debil')    $conds[] = 'final_score<55';
+    }
+    return $conds ? ' AND ('.implode(' OR ', $conds).')' : '';
+}
+function marketSql(array $markets, PDO $pdo): string {
+    if (!$markets) return '';
+    $q = array_map(fn($m)=>$pdo->quote($m), $markets);
+    return ' AND market IN ('.implode(',', $q).')';
+}
+
 try {
     $pdo = Db::conn($cfg['db']);
 
@@ -48,11 +73,12 @@ try {
          GROUP BY market ORDER BY n DESC"
     )->fetchAll();
 
-    // ---- Totales dashboard + simulador ----
+    // ---- Totales dashboard + simulador (CON filtros aplicados) ----
+    $whereFiltros = bandaSql($fBandas) . marketSql($fMarkets, $pdo);
     $tot = $pdo->query(
         "SELECT COUNT(*) n, SUM(outcome='win') wins, SUM(outcome='loss') losses,
             ROUND(SUM(profit),2) profit_u
-         FROM signals WHERE outcome IN ('win','loss')"
+         FROM signals WHERE outcome IN ('win','loss')" . $whereFiltros
     )->fetch();
 
     $n = (int)($tot['n'] ?? 0);
@@ -64,6 +90,10 @@ try {
         'resultado'    => round($profitU * $stake, 2),   // ganancia/pérdida neta
         'roi_pct'      => $n ? round(100 * $profitU / $n, 1) : 0,
         'hit_rate'     => $n ? round(100 * (int)$tot['wins'] / $n, 1) : 0,
+        'filtros'      => ['markets'=>array_values($fMarkets), 'bandas'=>array_values($fBandas)],
+        'aviso_filtro' => $n > 0 && $n < 20
+            ? "Con estos filtros solo quedan $n apuestas: la cifra es poco fiable, tomatela como orientativa."
+            : null,
     ];
 
     // ---- LABORATORIO: por estrategia ----

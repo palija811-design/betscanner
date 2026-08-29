@@ -77,6 +77,25 @@
         <input type="number" id="stake" value="10" min="1" step="1">
         <button onclick="load()">Calcular</button>
       </div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:18px;padding-top:6px;border-top:1px solid var(--line)">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px">Confianza a incluir</div>
+          <label style="margin-right:12px;cursor:pointer"><input type="checkbox" class="fBanda" value="fuerte" checked> fuerte</label>
+          <label style="margin-right:12px;cursor:pointer"><input type="checkbox" class="fBanda" value="moderada" checked> moderada</label>
+          <label style="cursor:pointer"><input type="checkbox" class="fBanda" value="debil"> debil</label>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px">Mercados a incluir (ninguno = todos)</div>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="BTTS"> BTTS</label>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="OVER"> Over</label>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="UNDER"> Under</label>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="HOME"> 1</label>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="AWAY"> 2</label>
+          <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="DC_1X"> 1X</label>
+          <label style="cursor:pointer"><input type="checkbox" class="fMkt" value="DC_X2"> X2</label>
+        </div>
+      </div>
+      <div id="filtroAviso" style="font-family:var(--mono);font-size:11px;color:var(--warn);margin-bottom:14px"></div>
       <div class="sim-grid" id="simGrid"></div>
     </div>
 
@@ -113,9 +132,15 @@ function cls(n){ return n>=0?'pos':'neg'; }
 
 function load(){
   const stake=document.getElementById('stake').value||10;
-  fetch('/stats.php?stake='+stake).then(function(r){return r.json();}).then(function(d){
+  const bandas=Array.from(document.querySelectorAll('.fBanda:checked')).map(function(c){return c.value;});
+  const mkts=Array.from(document.querySelectorAll('.fMkt:checked')).map(function(c){return c.value;});
+  let url='/stats.php?stake='+stake;
+  if(bandas.length) url+='&bandas='+bandas.join(',');
+  if(mkts.length) url+='&markets='+mkts.join(',');
+  fetch(url).then(function(r){return r.json();}).then(function(d){
     if(!d.ok){ document.getElementById('aviso').innerHTML='<div class="aviso">Error: '+(d.error||'')+'</div>'; return; }
     document.getElementById('aviso').innerHTML = d.aviso ? '<div class="aviso">'+d.aviso+'</div>' : '';
+    document.getElementById('filtroAviso').textContent = d.dashboard.simulador.aviso_filtro || '';
 
     // simulador
     const s=d.dashboard.simulador;
