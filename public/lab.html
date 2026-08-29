@@ -103,8 +103,13 @@
         <p>CAMPEONATO DE MODELOS · ACIERTO + ROI · EVOLUCIÓN CONTINUA</p>
       </div>
     </div>
-    <a class="navlink" href="/index.html">← Señales del día</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button id="runBtn" onclick="runStrategies()" style="background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:9px 15px;cursor:pointer">&#9654; Lanzar estrategias hoy</button>
+      <a class="navlink" href="/index.html">&larr; Se&ntilde;ales del d&iacute;a</a>
+    </div>
   </header>
+
+  <div id="runMsg" style="display:none;font-family:var(--mono);font-size:12px;padding:12px 14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--line)"></div>
 
   <div class="strip" id="strip"></div>
 
@@ -246,6 +251,21 @@ function render(data){
 //   document.getElementById('rankBody').innerHTML='<tr><td colspan=6 class="loading">No se pudo cargar el rendimiento.</td></tr>';
 // });
 fetch('/performance.php').then(r=>r.json()).then(d=>{ if(d&&d.ok&&d.performance&&d.performance.length) render(d); else render(DEMO); }).catch(()=>render(DEMO));
+function runStrategies(){
+  const btn=document.getElementById('runBtn');
+  const msg=document.getElementById('runMsg');
+  btn.disabled=true; btn.innerHTML='&#9654; Analizando... (puede tardar 1-2 min)';
+  msg.style.display='block'; msg.style.borderColor='var(--line)'; msg.style.color='var(--ink-dim)';
+  msg.textContent='Las estrategias estan puntuando los partidos de hoy. Esto puede tardar un par de minutos...';
+  fetch('/run_strategies.php').then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false; btn.innerHTML='&#9654; Lanzar estrategias hoy';
+    if(d.ok){
+      msg.style.borderColor='var(--signal-dim)'; msg.style.color='var(--signal)';
+      msg.textContent=d.msg||('Listo: '+d.partidos+' partidos puntuados.');
+    } else { msg.style.color='var(--danger)'; msg.textContent='Error: '+(d.error||'no se pudo'); }
+  }).catch(function(){ btn.disabled=false; btn.innerHTML='&#9654; Lanzar estrategias hoy';
+    msg.style.color='var(--danger)'; msg.textContent='Error de conexion.'; });
+}
 </script>
 </body>
 </html>
