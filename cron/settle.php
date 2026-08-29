@@ -44,12 +44,17 @@ function marketHit(string $market, int $h, int $a): bool {
     };
 }
 
-// fixtures con predicciones pendientes y que ya deberían haber acabado
+// fixtures que ya deberían haber acabado Y tienen algo pendiente de liquidar
+// (una señal del dashboard O una predicción del laboratorio). Los que ya están
+// completamente liquidados NO se seleccionan, así no se vuelven a pedir a la API.
 $rows = $pdo->query(
-    "SELECT DISTINCT f.id, f.kickoff_utc, f.status
+    "SELECT f.id, f.kickoff_utc, f.status
      FROM fixtures f
-     JOIN predictions p ON p.fixture_id = f.id AND p.outcome = 'pending'
      WHERE f.kickoff_utc < (UTC_TIMESTAMP() - INTERVAL 150 MINUTE)
+       AND (
+         EXISTS (SELECT 1 FROM predictions p WHERE p.fixture_id=f.id AND p.outcome='pending')
+         OR EXISTS (SELECT 1 FROM signals s WHERE s.fixture_id=f.id AND s.outcome='pending')
+       )
      ORDER BY f.kickoff_utc ASC
      LIMIT 40"
 )->fetchAll();
