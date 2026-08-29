@@ -17,8 +17,8 @@ declare(strict_types=1);
  * v_strategy_performance y v_strategy_breakdown, sin más cálculo.
  */
 
-require __DIR__ . '/../src/Db.php';
-require __DIR__ . '/../src/ApiFootball.php';
+require_once __DIR__ . '/../src/Db.php';
+require_once __DIR__ . '/../src/ApiFootball.php';
 
 use SignalPitch\Db;
 use SignalPitch\ApiFootball;
