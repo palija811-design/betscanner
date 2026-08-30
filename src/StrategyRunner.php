@@ -24,8 +24,9 @@ final class StrategyRunner
 {
     public function __construct(
         private PDO $pdo,
-        private ClaudeScorer $adjuster,      // motor hybrid
-        private ReasoningScorer $reasoner    // motor reasoning
+        private ClaudeScorer $adjuster,          // motor hybrid
+        private ReasoningScorer $reasoner,       // motor reasoning EXTENDIDO (con contexto)
+        private ?ReasoningScorerBasic $reasonerBasic = null  // motor reasoning BÁSICO (prompt viejo)
     ) {}
 
     /** Carga estrategias activas con su config decodificada. */
@@ -51,9 +52,10 @@ final class StrategyRunner
     {
         $strategies = $this->activeStrategies();
 
-        // cacheamos el resultado del motor reasoning por si varias estrategias
-        // lo comparten (misma llamada cara reutilizada)
-        $reasoningCache = null;
+        // cacheamos el resultado de cada motor reasoning por si varias estrategias
+        // lo comparten (misma llamada cara reutilizada). Una caché por variante.
+        $reasoningCacheExt = null;    // extendido (con contexto)
+        $reasoningCacheBas = null;    // básico (prompt viejo)
 
         foreach ($strategies as $st) {
             $cfg = $st['config'];
@@ -63,22 +65,30 @@ final class StrategyRunner
             $perMarket = []; // market => [score, verdict, risk, factors, model, reasoning]
 
             if ($engine === 'reasoning') {
-                if ($reasoningCache === null) {
-                    $useWeb = (bool)($cfg['use_web'] ?? false);
-                    try {
-                        $reasoningCache = $this->reasoner->analyze($ctx, $useTop, $useWeb);
-                    } catch (\Throwable $e) {
-                        $reasoningCache = ['BTTS'=>[],'OVER'=>[],'UNDER'=>[],'model'=>'error'];
+                $variant = $cfg['variant'] ?? 'extended';   // 'basic' o 'extended'
+                $useWeb = (bool)($cfg['use_web'] ?? false);
+                $rc = null;
+                if ($variant === 'basic' && $this->reasonerBasic !== null) {
+                    if ($reasoningCacheBas === null) {
+                        try { $reasoningCacheBas = $this->reasonerBasic->analyze($ctx, $useTop, $useWeb); }
+                        catch (\Throwable $e) { $reasoningCacheBas = ['BTTS'=>[],'OVER'=>[],'UNDER'=>[],'model'=>'error']; }
                     }
+                    $rc = $reasoningCacheBas;
+                } else {
+                    if ($reasoningCacheExt === null) {
+                        try { $reasoningCacheExt = $this->reasoner->analyze($ctx, $useTop, $useWeb); }
+                        catch (\Throwable $e) { $reasoningCacheExt = ['BTTS'=>[],'OVER'=>[],'UNDER'=>[],'model'=>'error']; }
+                    }
+                    $rc = $reasoningCacheExt;
                 }
                 foreach (['BTTS','OVER','UNDER'] as $mk) {
                     $perMarket[$mk] = [
-                        'score'   => (int)($reasoningCache[$mk]['score'] ?? 0),
-                        'verdict' => $reasoningCache[$mk]['verdict'] ?? '',
-                        'risk'    => $reasoningCache[$mk]['risk'] ?? '',
+                        'score'   => (int)($rc[$mk]['score'] ?? 0),
+                        'verdict' => $rc[$mk]['verdict'] ?? '',
+                        'risk'    => $rc[$mk]['risk'] ?? '',
                         'factors' => null,
-                        'model'   => $reasoningCache['model'] ?? 'reasoning',
-                        'reasoning' => $reasoningCache['key_factors'] ?? null,
+                        'model'   => $rc['model'] ?? 'reasoning',
+                        'reasoning' => $rc['key_factors'] ?? null,
                     ];
                 }
             } else {
