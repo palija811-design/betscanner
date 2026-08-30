@@ -40,6 +40,8 @@ function marketHit(string $market, int $h, int $a): bool {
         'AWAY'  => $a > $h,       // gana el visitante
         'DC_1X' => $h >= $a,      // local o empate
         'DC_X2' => $a >= $h,      // visitante o empate
+        'OVER15'  => $total >= 2, // Over 1.5 (2+ goles)
+        'UNDER15' => $total <= 1, // Under 1.5 (0 o 1 gol)
         default => false,
     };
 }
