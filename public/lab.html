@@ -35,6 +35,20 @@
   .champ{color:var(--signal)}
   .pos{color:var(--signal)}.neg{color:var(--danger)}
   .badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;background:rgba(62,242,161,0.12);color:var(--signal);margin-left:6px}
+  .strat-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .strat-head{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;user-select:none;flex-wrap:wrap}
+  .strat-head:hover{background:var(--panel-2)}
+  .strat-head .arrow{font-family:var(--mono);color:var(--ink-dim);transition:transform .15s}
+  .strat-head.open .arrow{transform:rotate(90deg)}
+  .strat-name{font-family:var(--mono);font-weight:700;font-size:14px;min-width:130px}
+  .strat-metric{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .strat-metric b{color:var(--ink)}
+  .strat-body{display:none;border-top:1px solid var(--line);overflow-x:auto}
+  .strat-body.open{display:block}
+  .strat-body table{width:100%;border-collapse:collapse;min-width:520px}
+  .strat-body th,.strat-body td{text-align:left;padding:9px 14px;font-size:12px;border-bottom:1px solid var(--line);font-family:var(--mono);white-space:nowrap}
+  .strat-body th{font-size:9px;color:var(--ink-dim);text-transform:uppercase}
+  .strat-loading{padding:16px;text-align:center;color:var(--ink-dim);font-family:var(--mono);font-size:12px}
   .badge.ai{background:rgba(255,204,77,0.12);color:var(--warn)}
   .empty{text-align:center;color:var(--ink-dim);font-family:var(--mono);font-size:13px;padding:34px}
   .aviso{background:rgba(255,204,77,0.08);border:1px solid rgba(255,204,77,0.3);color:var(--warn);font-family:var(--mono);font-size:12px;padding:12px 16px;border-radius:10px;margin-bottom:20px;line-height:1.5}
@@ -88,15 +102,8 @@
     </div>
   </div>
 
-  <div class="section-title">Ranking de estrategias (por ROI)</div>
-  <div class="table-wrap">
-    <table id="rankTable">
-      <thead><tr>
-        <th>Estrategia</th><th>Apuestas</th><th>Aciertos</th><th>% acierto</th><th>ROI</th><th>Beneficio</th>
-      </tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <div class="section-title">Ranking de estrategias (por ROI) <span style="font-size:10px;color:var(--ink-dim)">(clic en una estrategia para ver sus apuestas)</span></div>
+  <div id="rankAcordeon"></div>
 
   <div class="section-title">Desglose por banda de score</div>
   <div class="table-wrap">
@@ -171,16 +178,24 @@ function render(d){
     '<div class="stat"><div class="k">Mejor ROI</div><div class="v sig">'+(best.roi_pct!==undefined?fmtRoi(best.roi_pct):'-')+'</div></div>'+
     '<div class="stat"><div class="k">Mejor estrategia</div><div class="v" style="font-size:15px">'+(best.name||'-')+'</div></div>';
 
-  // ranking
-  var rt=document.querySelector('#rankTable tbody');
+  // ranking como acordeon: cada estrategia despliega sus apuestas
+  var ra=document.getElementById('rankAcordeon');
   if(perfF.length){
-    rt.innerHTML=perfF.slice().sort(function(a,b){return (+b.roi_pct||0)-(+a.roi_pct||0);}).map(function(p){
+    ra.innerHTML=perfF.slice().sort(function(a,b){return (+b.roi_pct||0)-(+a.roi_pct||0);}).map(function(p){
       var badge = p.is_champion==1 ? '<span class="badge">CAMPEONA</span>' : (p.origin==='ai'?'<span class="badge ai">IA</span>':'');
-      return '<tr><td>'+p.name+badge+'</td><td>'+p.picks_settled+'</td><td>'+p.wins+'</td>'+
-        '<td>'+(p.hit_rate||0)+'%</td><td class="'+pos(p.roi_pct)+'">'+fmtRoi(p.roi_pct)+'</td>'+
-        '<td class="'+pos(p.total_profit)+'">'+((+p.total_profit>=0?'+':'')+(p.total_profit||0))+'</td></tr>';
+      return '<div class="strat-item">'+
+        '<div class="strat-head" data-code="'+p.code+'" onclick="toggleStrat(this)">'+
+          '<span class="arrow">&#9654;</span>'+
+          '<span class="strat-name">'+p.name+badge+'</span>'+
+          '<span class="strat-metric"><b>'+p.picks_settled+'</b> apuestas</span>'+
+          '<span class="strat-metric"><b>'+(p.hit_rate||0)+'%</b> acierto</span>'+
+          '<span class="strat-metric '+pos(p.roi_pct)+'">ROI '+fmtRoi(p.roi_pct)+'</span>'+
+          '<span class="strat-metric '+pos(p.total_profit)+'">'+((+p.total_profit>=0?'+':'')+(p.total_profit||0))+' ud.</span>'+
+        '</div>'+
+        '<div class="strat-body"><div class="strat-loading">Haz clic para cargar las apuestas...</div></div>'+
+      '</div>';
     }).join('');
-  } else { rt.innerHTML='<tr><td colspan="6" class="empty">Sin estrategias en la selecci&oacute;n.</td></tr>'; }
+  } else { ra.innerHTML='<div class="empty" style="padding:24px">Sin estrategias en la selecci&oacute;n.</div>'; }
 
   // breakdown
   var bt=document.querySelector('#bdTable tbody');
@@ -215,6 +230,44 @@ function runStrategies(){
     else { msg.style.color='var(--danger)'; msg.textContent='Error: '+(d.error||'no se pudo'); }
   }).catch(function(){ btn.disabled=false; btn.innerHTML='&#9654; Lanzar estrategias hoy';
     msg.style.color='var(--danger)'; msg.textContent='Error de conexion.'; });
+}
+
+function fmtFechaLab(s){
+  if(!s) return '-';
+  try{ var d=new Date(s.replace(' ','T')+'Z');
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}); }catch(e){ return s; }
+}
+function mLabelLab(mk){
+  var m={'OVER':'Over 2.5','UNDER':'Under 2.5','BTTS':'BTTS','HOME':'Gana local','AWAY':'Gana visit.','DC_1X':'1X','DC_X2':'X2','OVER15':'Over 1.5','UNDER15':'Under 1.5'};
+  return m[mk]||mk;
+}
+function toggleStrat(head){
+  head.classList.toggle('open');
+  var body=head.nextElementSibling;
+  body.classList.toggle('open');
+  if(body.classList.contains('open') && !body.dataset.loaded){
+    var code=head.dataset.code;
+    fetch('/history.php?source=lab&strategy='+encodeURIComponent(code)+'&limit=100')
+      .then(function(r){return r.json();}).then(function(d){
+        body.dataset.loaded='1';
+        if(!d.ok || !d.rows || !d.rows.length){
+          body.innerHTML='<div class="strat-loading">Esta estrategia a&uacute;n no tiene apuestas liquidadas.</div>';
+          return;
+        }
+        var filas=d.rows.map(function(r){
+          var benef=(+r.profit>=0?'+':'')+((+r.profit||0).toFixed(2));
+          var mk=(+r.profit>=0)?'pos':'neg';
+          var marc=(r.home_goals===null||r.home_goals===undefined)?'-':(r.home_goals+'-'+r.away_goals);
+          var res=r.outcome==='win'
+            ? '<span style="color:var(--signal);font-weight:700">GANADA</span>'
+            : '<span style="color:var(--danger);font-weight:700">PERDIDA</span>';
+          return '<tr><td>'+fmtFechaLab(r.settled_at)+'</td><td>'+r.home+' - '+r.away+'</td>'+
+            '<td>'+mLabelLab(r.market)+'</td><td>'+r.score+'</td><td>'+(r.odds||'-')+'</td>'+
+            '<td>'+res+'</td><td>'+marc+'</td><td class="'+mk+'">'+benef+'</td></tr>';
+        }).join('');
+        body.innerHTML='<table><thead><tr><th>Fecha</th><th>Partido</th><th>Mercado</th><th>Score</th><th>Cuota</th><th>Resultado</th><th>Marcador</th><th>Benef.</th></tr></thead><tbody>'+filas+'</tbody></table>';
+      }).catch(function(){ body.innerHTML='<div class="strat-loading">Error cargando apuestas.</div>'; });
+  }
 }
 
 load();
