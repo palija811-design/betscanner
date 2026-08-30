@@ -46,6 +46,19 @@
   .tabs button{background:transparent;color:var(--ink-dim);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;padding:9px 16px;cursor:pointer}
   .tabs button.on{background:var(--signal);color:#04120c;font-weight:700}
   .disc{font-family:var(--mono);font-size:10px;color:var(--ink-dim);line-height:1.6;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
+  .band-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .band-head{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;user-select:none}
+  .band-head:hover{background:var(--panel-2)}
+  .band-head .arrow{font-family:var(--mono);color:var(--ink-dim);transition:transform .15s}
+  .band-head.open .arrow{transform:rotate(90deg)}
+  .band-name{font-family:var(--mono);font-weight:700;font-size:14px;min-width:90px}
+  .band-metric{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .band-metric b{color:var(--ink)}
+  .band-body{display:none;border-top:1px solid var(--line);overflow-x:auto}
+  .band-body.open{display:block}
+  .band-body table{width:100%;border-collapse:collapse;min-width:560px}
+  .band-body th,.band-body td{text-align:left;padding:9px 14px;font-size:12px;border-bottom:1px solid var(--line);font-family:var(--mono);white-space:nowrap}
+  .band-body th{font-size:9px;color:var(--ink-dim);text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -99,16 +112,16 @@
       <div class="sim-grid" id="simGrid"></div>
     </div>
 
-    <div class="section-title">Acierto por nivel de confianza</div>
-    <div class="table-wrap"><table id="bandaTable"><thead><tr>
-      <th>Banda</th><th>Apuestas</th><th>Aciertos</th><th>% acierto</th><th>Beneficio (ud.)</th>
-    </tr></thead><tbody></tbody></table></div>
+    <div class="section-title">Acierto por nivel de confianza <span style="font-size:10px;color:var(--ink-dim)">(clic en una banda para ver sus apuestas)</span></div>
+    <div id="bandasAcordeon"></div>
 
     <div class="section-title">Acierto por mercado</div>
     <div class="table-wrap"><table id="mktTable"><thead><tr>
       <th>Mercado</th><th>Apuestas</th><th>Aciertos</th><th>% acierto</th><th>Beneficio (ud.)</th>
     </tr></thead><tbody></tbody></table></div>
+  </div>
 
+  <div id="paneDashHistOculto" style="display:none">
     <div class="section-title">Historial de apuestas (cada se&ntilde;al liquidada)</div>
     <div class="table-wrap"><table id="histDashTable"><thead><tr>
       <th>Fecha</th><th>Partido</th><th>Liga</th><th>Mercado</th><th>Score</th><th>Cuota</th><th>Resultado</th><th>Marcador</th><th>Benef.</th>
@@ -160,14 +173,8 @@ function load(){
       '<div class="sim-cell"><div class="k">Resultado</div><div class="v '+cls(s.resultado)+'">'+eur(s.resultado)+'</div></div>'+
       '<div class="sim-cell"><div class="k">ROI</div><div class="v '+cls(s.roi_pct)+'">'+(s.roi_pct>=0?'+':'')+s.roi_pct+'%</div></div>';
 
-    // bandas
-    var bt=document.querySelector('#bandaTable tbody');
-    if(d.dashboard.por_banda.length){
-      bt.innerHTML=d.dashboard.por_banda.map(function(b){
-        return '<tr><td><span class="pill '+b.banda+'">'+b.banda+'</span></td><td>'+b.n+'</td><td>'+b.wins+'</td>'+
-          '<td>'+(b.hit_rate||0)+'%</td><td class="'+cls(b.profit_u||0)+'">'+(b.profit_u>=0?'+':'')+(b.profit_u||0)+'</td></tr>';
-      }).join('');
-    } else { bt.innerHTML='<tr><td colspan="5" class="empty">Aun no hay senales liquidadas. Se llenara cuando se jueguen los partidos analizados.</td></tr>'; }
+    // bandas: ahora se muestran como acordeon desplegable (construirAcordeonBandas),
+    // alimentado desde loadHistory('dashboard'). Aqui ya no rellenamos tabla.
 
     // mercados
     var mt=document.querySelector('#mktTable tbody');
@@ -216,9 +223,58 @@ function resultadoPill(o){
     ? '<span style="color:var(--signal);font-weight:700">GANADA</span>'
     : '<span style="color:var(--danger);font-weight:700">PERDIDA</span>';
 }
+function bandaDe(score){
+  if(score>=70) return {key:'fuerte', label:'FUERTE', color:'var(--signal)'};
+  if(score>=55) return {key:'moderada', label:'MODERADA', color:'var(--warn)'};
+  return {key:'debil', label:'DEBIL', color:'var(--ink-dim)'};
+}
+
+function construirAcordeonBandas(rows){
+  var cont=document.getElementById('bandasAcordeon');
+  if(!cont) return;
+  // agrupar por banda
+  var grupos={fuerte:[], moderada:[], debil:[]};
+  rows.forEach(function(r){ grupos[bandaDe(+r.score).key].push(r); });
+
+  var orden=[{k:'fuerte',l:'FUERTE',c:'var(--signal)'},{k:'moderada',l:'MODERADA',c:'var(--warn)'},{k:'debil',l:'DEBIL',c:'var(--ink-dim)'}];
+  cont.innerHTML = orden.map(function(b){
+    var lista=grupos[b.k];
+    var n=lista.length;
+    var wins=lista.filter(function(r){return r.outcome==='win';}).length;
+    var hit=n?Math.round(100*wins/n):0;
+    var prof=lista.reduce(function(s,r){return s+(+r.profit||0);},0).toFixed(2);
+    var profCls=(+prof>=0)?'pos':'neg';
+
+    var filas = n ? lista.map(function(r){
+      var benef=(+r.profit>=0?'+':'')+((+r.profit||0).toFixed(2));
+      var mk=(+r.profit>=0)?'pos':'neg';
+      var marc=(r.home_goals===null||r.home_goals===undefined)?'-':(r.home_goals+'-'+r.away_goals);
+      return '<tr><td>'+fmtFecha(r.settled_at)+'</td><td>'+r.home+' - '+r.away+'</td>'+
+        '<td>'+(r.league||'')+'</td><td>'+mLabelH(r.market)+'</td><td>'+r.score+'</td>'+
+        '<td>'+(r.odds||'-')+'</td><td>'+resultadoPill(r.outcome)+'</td><td>'+marc+'</td>'+
+        '<td class="'+mk+'">'+benef+'</td></tr>';
+    }).join('') : '<tr><td colspan="9" style="color:var(--ink-dim);text-align:center;padding:16px">Sin apuestas en esta banda.</td></tr>';
+
+    return '<div class="band-item">'+
+      '<div class="band-head" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">'+
+        '<span class="arrow">&#9654;</span>'+
+        '<span class="band-name" style="color:'+b.c+'">'+b.l+'</span>'+
+        '<span class="band-metric"><b>'+n+'</b> apuestas</span>'+
+        '<span class="band-metric"><b>'+hit+'%</b> acierto</span>'+
+        '<span class="band-metric '+profCls+'">'+(+prof>=0?'+':'')+prof+' ud.</span>'+
+      '</div>'+
+      '<div class="band-body">'+
+        '<table><thead><tr><th>Fecha</th><th>Partido</th><th>Liga</th><th>Mercado</th><th>Score</th><th>Cuota</th><th>Resultado</th><th>Marcador</th><th>Benef.</th></tr></thead>'+
+        '<tbody>'+filas+'</tbody></table>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
 function loadHistory(source){
   var url = source==='lab' ? '/history.php?source=lab' : '/history.php?source=dashboard';
   fetch(url).then(function(r){return r.json();}).then(function(d){
+    if(source==='dashboard' && d.ok && d.rows){ construirAcordeonBandas(d.rows); }
     var tbodyId = source==='lab' ? '#histLabTable tbody' : '#histDashTable tbody';
     var tb=document.querySelector(tbodyId);
     if(!d.ok || !d.rows || !d.rows.length){
