@@ -115,6 +115,7 @@ foreach ($leagues as $lg) {
         $anyStrong = false;
         foreach ($analysis['markets'] as $sc) { if ($sc >= UMBRAL_INVESTIGACION) { $anyStrong = true; break; } }
         $rAll = null;
+        $iaFallo = false;   // la IA se intentó pero no respondió (p.ej. sin créditos)
         if ($anyStrong) {
             try {
                 $ctx = [
@@ -125,7 +126,9 @@ foreach ($leagues as $lg) {
                     'away'=>['name'=>$a['name'],'form'=>null,'gf_avg'=>$as['gf_avg'],'ga_avg'=>$as['ga_avg'],'btts_pct'=>$as['btts_pct'],'over25_pct'=>null,'injuries'=>null],
                 ];
                 $rAll = $reasoner->analyze($ctx, $useTop, true);  // web search ON
+                if (!$rAll || !isset($rAll['BTTS']['score'])) { $iaFallo = true; }
             } catch (Throwable $e) {
+                $iaFallo = true;
                 logln("  investigacion fail {$h['name']}-{$a['name']}: ".substr($e->getMessage(),0,60));
             }
         }
@@ -142,6 +145,8 @@ foreach ($leagues as $lg) {
 
             $finalScore = $statScore;
             $rv = null; $radj = null; $model = 'stat';
+            // si la IA se intentó y falló (sin créditos, etc.), lo marcamos aparte
+            if ($iaFallo && $statScore >= UMBRAL_INVESTIGACION) { $model = 'stat-ia-fallo'; }
             // aplica la investigación a este mercado si se hizo y lo cubre
             if ($rAll !== null && isset($rAll[$mk]['score'])) {
                 $aiScore = (int)$rAll[$mk]['score'];
