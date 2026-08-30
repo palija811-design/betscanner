@@ -112,8 +112,8 @@
     <button id="refreshBtn" onclick="refreshMissing()" style="background:transparent;color:var(--signal);border:1px solid var(--signal-dim);border-radius:8px;font-family:var(--mono);font-size:12px;padding:8px 14px;cursor:pointer">&#8635; Buscar partidos nuevos</button>
     <div class="slider-box">
       <span>SCORE MIN.</span>
-      <input type="range" id="thresh" min="0" max="100" value="55" step="5">
-      <span class="thresh-val" id="threshVal">55</span>
+      <input type="range" id="thresh" min="0" max="100" value="70" step="5">
+      <span class="thresh-val" id="threshVal">70</span>
     </div>
   </div>
   <div class="strip" id="strip"></div>
@@ -132,12 +132,12 @@ function tick(){
 tick(); setInterval(tick,30000);
 
 let ALL = [];
-let state = { market:'all', thresh:55 };
+let state = { market:'all', thresh:70 };
 
 function scoreColor(s){
   if(s>=80) return 'var(--gold)';        // elite
-  if(s>=76) return 'var(--signal)';      // fuerte alta (verde vivo)
-  if(s>=70) return 'var(--signal-soft)'; // fuerte baja (verde tenue)
+  if(s>=75) return 'var(--signal)';      // fuerte alta (verde vivo), desde 75
+  if(s>=70) return 'var(--signal-soft)'; // fuerte baja (verde tenue), 70-74
   if(s>=55) return 'var(--warn)';        // moderada
   return 'var(--muted)';                 // debil
 }
