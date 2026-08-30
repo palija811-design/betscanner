@@ -108,12 +108,22 @@
     <div class="table-wrap"><table id="mktTable"><thead><tr>
       <th>Mercado</th><th>Apuestas</th><th>Aciertos</th><th>% acierto</th><th>Beneficio (ud.)</th>
     </tr></thead><tbody></tbody></table></div>
+
+    <div class="section-title">Historial de apuestas (cada se&ntilde;al liquidada)</div>
+    <div class="table-wrap"><table id="histDashTable"><thead><tr>
+      <th>Fecha</th><th>Partido</th><th>Liga</th><th>Mercado</th><th>Score</th><th>Cuota</th><th>Resultado</th><th>Marcador</th><th>Benef.</th>
+    </tr></thead><tbody></tbody></table></div>
   </div>
 
   <div id="paneLab" style="display:none">
     <div class="section-title">Rendimiento por estrategia</div>
     <div class="table-wrap"><table id="labTable"><thead><tr>
       <th>Estrategia</th><th>Apuestas</th><th>% acierto</th><th>ROI</th><th>Beneficio (ud.)</th>
+    </tr></thead><tbody></tbody></table></div>
+
+    <div class="section-title">Historial de apuestas del laboratorio</div>
+    <div class="table-wrap"><table id="histLabTable"><thead><tr>
+      <th>Fecha</th><th>Estrategia</th><th>Partido</th><th>Mercado</th><th>Score</th><th>Cuota</th><th>Resultado</th><th>Marcador</th><th>Benef.</th>
     </tr></thead><tbody></tbody></table></div>
   </div>
 
@@ -188,7 +198,52 @@ function settleNow(){
     else { alert('Error: '+(d.error||'no se pudo')); }
   }).catch(function(){ btn.disabled=false; btn.innerHTML='&#8635; Actualizar resultados'; alert('Error de conexion.'); });
 }
+function fmtFecha(s){
+  if(!s) return '-';
+  try{ var d=new Date(s.replace(' ','T')+'Z');
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}); }catch(e){ return s; }
+}
+function mLabelH(mk){
+  var m={'OVER':'Over 2.5','UNDER':'Under 2.5','BTTS':'BTTS','HOME':'Gana local','AWAY':'Gana visit.','DC_1X':'1X','DC_X2':'X2','OVER15':'Over 1.5','UNDER15':'Under 1.5'};
+  return m[mk]||mk;
+}
+function marcador(r){
+  if(r.home_goals===null||r.home_goals===undefined) return '-';
+  return r.home_goals+'-'+r.away_goals;
+}
+function resultadoPill(o){
+  return o==='win'
+    ? '<span style="color:var(--signal);font-weight:700">GANADA</span>'
+    : '<span style="color:var(--danger);font-weight:700">PERDIDA</span>';
+}
+function loadHistory(source){
+  var url = source==='lab' ? '/history.php?source=lab' : '/history.php?source=dashboard';
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    var tbodyId = source==='lab' ? '#histLabTable tbody' : '#histDashTable tbody';
+    var tb=document.querySelector(tbodyId);
+    if(!d.ok || !d.rows || !d.rows.length){
+      tb.innerHTML='<tr><td colspan="9" class="empty">A&uacute;n no hay apuestas liquidadas.</td></tr>';
+      return;
+    }
+    tb.innerHTML=d.rows.map(function(r){
+      var benef=(+r.profit>=0?'+':'')+(r.profit!==null?(+r.profit).toFixed(2):'0');
+      var benefCls=(+r.profit>=0)?'pos':'neg';
+      if(source==='lab'){
+        return '<tr><td>'+fmtFecha(r.settled_at)+'</td><td>'+r.strategy+'</td>'+
+          '<td>'+r.home+' - '+r.away+'</td><td>'+mLabelH(r.market)+'</td>'+
+          '<td>'+r.score+'</td><td>'+(r.odds||'-')+'</td><td>'+resultadoPill(r.outcome)+'</td>'+
+          '<td>'+marcador(r)+'</td><td class="'+benefCls+'">'+benef+'</td></tr>';
+      }
+      return '<tr><td>'+fmtFecha(r.settled_at)+'</td>'+
+        '<td>'+r.home+' - '+r.away+'</td><td>'+r.league+'</td><td>'+mLabelH(r.market)+'</td>'+
+        '<td>'+r.score+'</td><td>'+(r.odds||'-')+'</td><td>'+resultadoPill(r.outcome)+'</td>'+
+        '<td>'+marcador(r)+'</td><td class="'+benefCls+'">'+benef+'</td></tr>';
+    }).join('');
+  }).catch(function(){});
+}
 load();
+loadHistory('dashboard');
+loadHistory('lab');
 </script>
 </body>
 </html>

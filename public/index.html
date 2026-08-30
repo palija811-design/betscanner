@@ -190,6 +190,10 @@ function render(){
     const poly = s.polymarket_url
       ? '<div class="poly"><a href="'+s.polymarket_url+'" target="_blank" rel="noopener">Ver en Polymarket &#8599;</a></div>' : '';
     const oddsHtml = s.odds ? '<span style="font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-left:6px">cuota '+s.odds+'</span>' : '';
+    const iaFallo = (s.model_used === 'stat-ia-fallo');
+    const iaFalloHtml = iaFallo
+      ? '<div style="margin:0 18px 12px;padding:8px 11px;border:1px solid rgba(255,107,107,0.35);background:rgba(255,107,107,0.07);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--danger);line-height:1.4">&#9888; An&aacute;lisis IA no disponible (revisa los cr&eacute;ditos de la API). Este score es solo estad&iacute;stico.</div>'
+      : '';
     const cardClass = 'card' + (isGold?' gold':'') + (isTop?' hastop':'');
     const crown = isGold ? '<div class="crown">&#128081;</div>' : '';
     const topTag = isTop ? '<div class="toptag">TOP DEL DIA</div>' : '';
@@ -213,6 +217,7 @@ function render(){
         adjHtml+
       '</div>'+
       discrepHtml+
+      iaFalloHtml+
       research+
       poly+
     '</div>';
