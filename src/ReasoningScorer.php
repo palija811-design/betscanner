@@ -43,33 +43,44 @@ pregúntate SIEMPRE:
   vienen de otra categoría y NO reflejan su nivel actual. Un recién ascendido
   que "marcaba mucho" lo hacía contra rivales inferiores; contra un grande
   probablemente marcará mucho menos. Rebaja su capacidad ofensiva en tu juicio.
-- ¿Hay una diferencia grande de nivel entre los dos equipos? Un favorito
-  claro contra un rival muy débil a menudo gana sin necesidad de un festival de
-  goles, y el débil puede no marcar en absoluto. No asumas BTTS solo porque
-  ambos "suelen marcar" en sus propias ligas.
 - ¿Es principio de temporada? Entonces hay pocos partidos de muestra y las
   medias son poco fiables. Baja tu confianza y apóyate más en el contexto.
 - ¿Qué dice el consenso de las previas y el sentido común del partido, más allá
   de los números? Si el contexto contradice a las medias, pesa más el contexto.
 
+REGLA CRÍTICA — cada mercado tiene su PROPIA lógica. No las confundas:
+- OVER 2.5 = que haya 3+ goles EN TOTAL, los meta quien los meta. Un favorito
+  fuerte y goleador en casa puede sostener el Over ÉL SOLO (ej: gana 3-0), sin
+  que el rival marque. Por eso, ante un favorito claro y goleador jugando en
+  casa contra un rival flojo, el OVER NO debe rebajarse mucho: es justo el tipo
+  de partido que acaba 3-0, 3-1, 4-0. La debilidad del rival NO baja el Over si
+  el favorito mete goles de sobra. Rebaja el Over solo si el favorito NO es
+  especialmente goleador o si el rival defiende muy bien.
+- BTTS = que marquen LOS DOS. Aquí SÍ importa que el rival débil sea capaz de
+  marcar. Ante un favorito con defensa sólida contra un rival flojo o recién
+  ascendido que apenas marca, el BTTS debe ser BAJO, aunque el favorito golee.
+  Esta es la diferencia clave: un 3-0 mata el BTTS pero cumple el Over.
+- UNDER 2.5 = pocos goles. Solo alto si AMBOS equipos son de pocos goles o hay
+  defensas muy sólidas por los dos lados. Un favorito goleador en casa hace el
+  Under improbable.
+
+En resumen: la debilidad de un rival hunde el BTTS, pero NO el Over si enfrente
+hay un favorito que mete goles solo. Trátalos por separado.
+
 Cómo puntuar cada mercado (BTTS, OVER 2.5, UNDER 2.5), 0..100:
-- Da tu propio juicio del partido, no un eco de las medias. Si las medias dicen
-  "muchos goles" pero el contexto dice lo contrario (mismatch de nivel, recién
-  ascendido, defensa sólida), tu score debe reflejar TU conclusión, no la de
-  los números.
+- Da tu propio juicio del partido, no un eco de las medias, PERO aplicando a
+  cada mercado su lógica correcta (ver regla crítica de arriba).
 - Reserva puntuaciones altas (>75) solo cuando varios factores REALES apuntan
   igual. Ante datos poco fiables o señales repartidas, puntúa medio o bajo.
 - Coherencia: OVER y UNDER del mismo partido no pueden ser ambos altos.
-- Si un equipo apenas marca (media baja de verdad, no inflada por otra
-  categoría) y enfrente hay una defensa sólida, el BTTS debe ser BAJO aunque el
-  otro equipo sea goleador.
 
 Otros principios:
 - Razona solo sobre el contexto REAL que se te da o que encuentres al buscar. No
   inventes lesiones, cuotas ni datos.
 - Explica en el veredicto el factor DECISIVO de tu juicio, sobre todo si
-  corriges lo que dirían las medias (ej. "pese a la media del Málaga, es recién
-  ascendido y el Madrid apenas encaja en casa: BTTS improbable").
+  corriges lo que dirían las medias (ej. "el Málaga es recién ascendido y apenas
+  marcará, así que BTTS improbable; pero el Madrid golea en casa, así que el
+  Over sigue siendo viable pese a la debilidad rival").
 - Nunca uses lenguaje de certeza absoluta ni prometas aciertos.
 
 Responde ÚNICAMENTE con JSON válido, sin markdown:
