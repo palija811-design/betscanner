@@ -177,9 +177,13 @@ function render(){
     const isTop = idx===0;   // la lista va ordenada desc, la primera es la mejor
     const adj=s.research_adjustment;
     let adjHtml='';
+    let discrepHtml='';
     if(adj!==null && adj!==undefined && (+adj)!==0){
       const up=(+adj)>0;
       adjHtml='<span class="adj '+(up?'up':'down')+'">IA '+(up?'+':'')+adj+'</span>';
+      if(Math.abs(+adj)>=10){
+        discrepHtml='<div style="margin:0 18px 12px;padding:8px 11px;border:1px solid rgba(255,204,77,0.35);background:rgba(255,204,77,0.07);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--warn);line-height:1.4">&#9888; La IA y la estad&iacute;stica discrepan bastante en este partido. Conviene mirarlo con calma antes de decidir.</div>';
+      }
     }
     const research = s.research_verdict
       ? '<div class="research"><span class="badge">IA</span><p>'+s.research_verdict+'</p></div>' : '';
@@ -208,6 +212,7 @@ function render(){
         '<span class="verdict" style="color:'+col+'">'+(sc>=80?'maxima conviccion':sc>=70?'senal fuerte':sc>=55?'moderada':'debil')+'</span>'+
         adjHtml+
       '</div>'+
+      discrepHtml+
       research+
       poly+
     '</div>';
