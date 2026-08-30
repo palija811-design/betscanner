@@ -20,12 +20,14 @@ require __DIR__ . '/../src/ApiFootball.php';
 require __DIR__ . '/../src/Scorer.php';
 require __DIR__ . '/../src/ClaudeScorer.php';
 require __DIR__ . '/../src/ReasoningScorer.php';
+require __DIR__ . '/../src/ReasoningScorerBasic.php';
 require __DIR__ . '/../src/StrategyRunner.php';
 
 use SignalPitch\Db;
 use SignalPitch\ApiFootball;
 use SignalPitch\ClaudeScorer;
 use SignalPitch\ReasoningScorer;
+use SignalPitch\ReasoningScorerBasic;
 use SignalPitch\StrategyRunner;
 
 $cfg = require __DIR__ . '/../config/config.php';
@@ -34,7 +36,8 @@ $api = new ApiFootball($pdo, $cfg['apifootball']);
 $runner = new StrategyRunner(
     $pdo,
     new ClaudeScorer($cfg['claude']),
-    new ReasoningScorer($cfg['claude'])
+    new ReasoningScorer($cfg['claude']),
+    new ReasoningScorerBasic($cfg['claude'])
 );
 $season = $cfg['apifootball']['season'];
 $today  = gmdate('Y-m-d');
