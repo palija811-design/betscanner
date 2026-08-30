@@ -60,6 +60,34 @@
   <div id="aviso"></div>
   <div class="strip" id="strip"></div>
 
+  <div class="section-title">Filtros de comparaci&oacute;n</div>
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:8px">
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px">Estrategias a mostrar (ninguna = todas)</div>
+      <div id="stratFilters" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+    </div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px">Mercado (desglose)</div>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="BTTS"> BTTS</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="OVER"> Over</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="UNDER"> Under</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="HOME"> 1</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="AWAY"> 2</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fMkt" value="DC_1X"> 1X</label>
+        <label style="cursor:pointer"><input type="checkbox" class="fMkt" value="DC_X2"> X2</label>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:8px">Banda de score (desglose)</div>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fBand" value="80-100"> 80+</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fBand" value="70-79"> 70-79</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fBand" value="60-69"> 60-69</label>
+        <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="fBand" value="50-59"> 50-59</label>
+        <label style="cursor:pointer"><input type="checkbox" class="fBand" value="<50"> &lt;50</label>
+      </div>
+    </div>
+  </div>
+
   <div class="section-title">Ranking de estrategias (por ROI)</div>
   <div class="table-wrap">
     <table id="rankTable">
@@ -87,52 +115,92 @@
 function pos(n){ return (+n)>=0?'pos':'neg'; }
 function fmtRoi(n){ return ((+n)>=0?'+':'')+(+n)+'%'; }
 
+let DATA = null;   // guardamos la respuesta para re-filtrar sin re-pedir
+
+function getChecked(cls){ return Array.from(document.querySelectorAll('.'+cls+':checked')).map(function(c){return c.value;}); }
+
+function buildStratFilters(perf){
+  const cont=document.getElementById('stratFilters');
+  if(cont.dataset.built) return;   // solo una vez
+  cont.innerHTML = perf.map(function(p){
+    return '<label style="cursor:pointer"><input type="checkbox" class="fStrat" value="'+p.code+'"> '+p.name+'</label>';
+  }).join('');
+  cont.dataset.built='1';
+  Array.from(document.querySelectorAll('.fStrat')).forEach(function(c){c.addEventListener('change',applyFilters);});
+}
+
+function applyFilters(){
+  if(!DATA) return;
+  render(DATA);
+}
+
 function render(d){
   var perf = d.performance||[];
   var bd = d.breakdown||[];
 
-  // aviso de fiabilidad segun total de apuestas
-  var totBets = perf.reduce(function(s,p){return s+(+p.picks_settled||0);},0);
+  buildStratFilters(perf);
+
+  // filtros activos
+  var fStrat = getChecked('fStrat');
+  var fMkt = getChecked('fMkt');
+  var fBand = getChecked('fBand');
+
+  // aplica filtro de estrategia al ranking
+  var perfF = fStrat.length ? perf.filter(function(p){return fStrat.indexOf(p.code)>=0;}) : perf;
+
+  // aplica filtros al desglose
+  var bdF = bd.filter(function(b){
+    var okS = !fStrat.length || fStrat.indexOf(b.code)>=0;
+    var okM = !fMkt.length || fMkt.indexOf(b.market)>=0;
+    var okB = !fBand.length || fBand.indexOf(b.score_band)>=0;
+    return okS && okM && okB;
+  });
+
+  // aviso de fiabilidad segun total de apuestas (del conjunto filtrado)
+  var totBets = perfF.reduce(function(s,p){return s+(+p.picks_settled||0);},0);
   document.getElementById('aviso').innerHTML = totBets < 100
-    ? '<div class="aviso">Solo '+totBets+' apuestas liquidadas en total. Estas cifras son orientativas: con tan pocas, un ROI alto puede ser simple suerte. Hacen falta cientos para que signifiquen algo.</div>'
+    ? '<div class="aviso">Solo '+totBets+' apuestas liquidadas en la selecci&oacute;n. Estas cifras son orientativas: con tan pocas, un ROI alto puede ser simple suerte. Hacen falta cientos para fiarse.</div>'
     : '';
 
-  // strip resumen
-  var champ = perf.find(function(p){return p.is_champion==1;}) || perf[0] || {};
-  var best = perf[0] || {};
+  // strip resumen (sobre el conjunto filtrado)
+  var champ = perfF.find(function(p){return p.is_champion==1;}) || perfF[0] || {};
+  var best = perfF.slice().sort(function(a,b){return (+b.roi_pct||0)-(+a.roi_pct||0);})[0] || {};
   document.getElementById('strip').innerHTML =
-    '<div class="stat"><div class="k">Estrategias</div><div class="v">'+perf.length+'</div></div>'+
-    '<div class="stat"><div class="k">Apuestas totales</div><div class="v">'+totBets+'</div></div>'+
+    '<div class="stat"><div class="k">Estrategias</div><div class="v">'+perfF.length+'</div></div>'+
+    '<div class="stat"><div class="k">Apuestas (sel.)</div><div class="v">'+totBets+'</div></div>'+
     '<div class="stat"><div class="k">Mejor ROI</div><div class="v sig">'+(best.roi_pct!==undefined?fmtRoi(best.roi_pct):'-')+'</div></div>'+
-    '<div class="stat"><div class="k">Campeona</div><div class="v" style="font-size:15px">'+(champ.name||'-')+'</div></div>';
+    '<div class="stat"><div class="k">Mejor estrategia</div><div class="v" style="font-size:15px">'+(best.name||'-')+'</div></div>';
 
   // ranking
   var rt=document.querySelector('#rankTable tbody');
-  if(perf.length){
-    rt.innerHTML=perf.map(function(p){
+  if(perfF.length){
+    rt.innerHTML=perfF.slice().sort(function(a,b){return (+b.roi_pct||0)-(+a.roi_pct||0);}).map(function(p){
       var badge = p.is_champion==1 ? '<span class="badge">CAMPEONA</span>' : (p.origin==='ai'?'<span class="badge ai">IA</span>':'');
       return '<tr><td>'+p.name+badge+'</td><td>'+p.picks_settled+'</td><td>'+p.wins+'</td>'+
         '<td>'+(p.hit_rate||0)+'%</td><td class="'+pos(p.roi_pct)+'">'+fmtRoi(p.roi_pct)+'</td>'+
         '<td class="'+pos(p.total_profit)+'">'+((+p.total_profit>=0?'+':'')+(p.total_profit||0))+'</td></tr>';
     }).join('');
-  } else { rt.innerHTML='<tr><td colspan="6" class="empty">Aun no hay predicciones liquidadas. Lanza las estrategias y espera a que se jueguen los partidos.</td></tr>'; }
+  } else { rt.innerHTML='<tr><td colspan="6" class="empty">Sin estrategias en la selecci&oacute;n.</td></tr>'; }
 
   // breakdown
   var bt=document.querySelector('#bdTable tbody');
-  if(bd.length){
-    bt.innerHTML=bd.map(function(b){
+  if(bdF.length){
+    bt.innerHTML=bdF.map(function(b){
       return '<tr><td>'+(b.code||b.strategy_id)+'</td><td>'+b.market+'</td><td>'+b.score_band+'</td>'+
         '<td>'+b.n+'</td><td>'+(b.hit_rate||0)+'%</td><td class="'+pos(b.roi_pct)+'">'+fmtRoi(b.roi_pct)+'</td></tr>';
     }).join('');
-  } else { bt.innerHTML='<tr><td colspan="6" class="empty">Sin desglose todavia.</td></tr>'; }
+  } else { bt.innerHTML='<tr><td colspan="6" class="empty">Sin datos para estos filtros.</td></tr>'; }
 }
 
 function load(){
   fetch('/performance.php').then(function(r){return r.json();}).then(function(d){
-    if(d && d.ok){ render(d); }
+    if(d && d.ok){ DATA=d; render(d); }
     else { document.getElementById('aviso').innerHTML='<div class="aviso">No se pudo cargar el rendimiento.</div>'; }
   }).catch(function(){ document.getElementById('aviso').innerHTML='<div class="aviso">Error de conexion.</div>'; });
 }
+
+// filtros de mercado y banda re-aplican al vuelo
+Array.from(document.querySelectorAll('.fMkt, .fBand')).forEach(function(c){ c.addEventListener('change', applyFilters); });
 
 function runStrategies(){
   var btn=document.getElementById('runBtn');
