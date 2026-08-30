@@ -95,11 +95,30 @@ final class StrategyRunner
                 // stat o hybrid: parten del Scorer con los pesos de ESTA estrategia
                 $weights = $cfg['weights'] ?? null;
                 $analysis = $this->scoreWithWeights($stats, $weights);
-                foreach (['BTTS','OVER','UNDER'] as $mk) {
-                    $statScore = $analysis['markets'][$mk];
+                // qué mercados calcula esta estrategia (por defecto los de 2.5)
+                $mkList = $cfg['markets'] ?? ['BTTS','OVER','UNDER'];
+                // si pide mercados 1.5, los calculamos con el Scorer
+                $need15 = in_array('OVER15',$mkList,true) || in_array('UNDER15',$mkList,true);
+                $scores15 = [];
+                if ($need15) {
+                    $f = Scorer::factors($stats['home'], $stats['away'], (float)$stats['h2h']);
+                    $played = (int)$stats['played'];
+                    foreach (['OVER15','UNDER15'] as $m15) {
+                        $scores15[$m15] = Scorer::scoreFor($f, $m15, $played);
+                    }
+                }
+                foreach ($mkList as $mk) {
+                    // score según el mercado (2.5 desde analysis, 1.5 desde scores15)
+                    if (isset($scores15[$mk])) {
+                        $statScore = $scores15[$mk];
+                    } elseif (isset($analysis['markets'][$mk])) {
+                        $statScore = $analysis['markets'][$mk];
+                    } else {
+                        continue;
+                    }
                     $verdict = ''; $risk = ''; $model = 'stat'; $finalScore = $statScore;
 
-                    if ($engine === 'hybrid' && $statScore >= 45) {
+                    if ($engine === 'hybrid' && $statScore >= 45 && isset($analysis['markets'][$mk])) {
                         try {
                             $res = $this->adjuster->evaluate(
                                 $analysis['factors'], $mk, $statScore,

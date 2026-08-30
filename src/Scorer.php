@@ -20,6 +20,10 @@ final class Scorer
         'BTTS'  => ['attackHome'=>0.20,'attackAway'=>0.20,'leaky'=>0.20,'bttsHist'=>0.30,'h2h'=>0.10],
         'OVER'  => ['goalsAvg'=>0.40,'attackHome'=>0.15,'attackAway'=>0.15,'leaky'=>0.20,'h2h'=>0.10],
         'UNDER' => ['lowGoals'=>0.45,'solidHome'=>0.22,'solidAway'=>0.23,'h2h'=>0.10],
+        // Over/Under 1.5: mercado distinto. Superar 1.5 goles es MUCHO más común
+        // que superar 2.5, así que sus factores están centrados más abajo.
+        'OVER15'  => ['goalsAvg15'=>0.45,'attackHome'=>0.15,'attackAway'=>0.15,'leaky'=>0.15,'h2h15'=>0.10],
+        'UNDER15' => ['lowGoals15'=>0.50,'solidHome'=>0.22,'solidAway'=>0.18,'h2h15'=>0.10],
     ];
 
     private static function clamp(float $x): float
@@ -56,6 +60,12 @@ final class Scorer
             'bttsHist'   => self::clamp((($bH + $bA) / 2 - 35) / 45),
             // h2h usa los goles esperados como proxy si no hay dato directo
             'h2h'        => self::clamp(($h2hGoals - 2.0) / 1.8),
+            // --- Factores Over/Under 1.5: centrados MÁS ABAJO ---
+            // superar 1.5 goles es común; el punto neutro está en ~1.8 esperados.
+            // 1.2 esperados -> ~0 (partido muy cerrado), 3.0 -> 1 (goleador)
+            'goalsAvg15' => self::clamp(($expGoals - 1.2) / 1.8),
+            'lowGoals15' => self::clamp((2.4 - $expGoals) / 1.6),
+            'h2h15'      => self::clamp(($h2hGoals - 1.2) / 1.8),
         ];
     }
 
