@@ -163,7 +163,7 @@ foreach ($leagues as $lg) {
                    factors_json, ai_verdict, ai_risk, research_verdict, research_adjustment, model_used, odds, odds_source)
                 VALUES (:fx,:mk,:ss,:as,:fs,:cf,:fj,:vd,:rk,:rv,:radj,:md,:od,:osrc)
                 ON DUPLICATE KEY UPDATE
-                  stat_score=VALUES(stat_score), final_score=VALUES(final_score),
+                  stat_score=VALUES(stat_score), ai_score=VALUES(ai_score), final_score=VALUES(final_score),
                   confidence=VALUES(confidence), factors_json=VALUES(factors_json),
                   research_verdict=VALUES(research_verdict), research_adjustment=VALUES(research_adjustment),
                   model_used=VALUES(model_used), odds=VALUES(odds), odds_source=VALUES(odds_source),
