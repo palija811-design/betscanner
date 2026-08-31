@@ -170,7 +170,7 @@ foreach ($leagues as $lg) {
                   computed_at=CURRENT_TIMESTAMP")
                 ->execute([
                     ':fx'=>$fixtureId, ':mk'=>$mk, ':ss'=>$statScore,
-                    ':as'=>$finalScore, ':fs'=>$finalScore, ':cf'=>$conf,
+                    ':as'=>($rAll !== null && isset($rAll[$mk]['score']) ? (int)$rAll[$mk]['score'] : null), ':fs'=>$finalScore, ':cf'=>$conf,
                     ':fj'=>json_encode($analysis['factors'], JSON_UNESCAPED_UNICODE),
                     ':vd'=>null, ':rk'=>null, ':rv'=>$rv, ':radj'=>$radj, ':md'=>$model,
                     ':od'=>$mktOdds, ':osrc'=>$mktOdds?'apifootball':null,
