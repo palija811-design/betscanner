@@ -32,11 +32,13 @@ use SignalPitch\PolymarketLink;
 use SignalPitch\OddsFetcher;
 
 header('Content-Type: application/json; charset=utf-8');
+set_time_limit(300);   // más margen antes de que el servidor corte
 $cfg = require __DIR__ . '/../config/config.php';
 
-const UMBRAL_INVESTIGACION = 65;
+const UMBRAL_INVESTIGACION = 60;
 const UMBRAL_GUARDADO = 50;
 const HORAS_INMINENTE = 3;   // re-investiga si el partido empieza en <3h
+const MAX_POR_TANDA = 8;     // analiza como mucho estos partidos NUEVOS por pulsación
 
 try {
     $pdo = Db::conn($cfg['db']);
@@ -50,13 +52,16 @@ try {
     $leagues = $pdo->query("SELECT id,name,priority FROM leagues WHERE is_active=1 ORDER BY priority ASC")->fetchAll();
 
     $nuevos = 0; $reinvestigados = 0; $saltados = 0;
+    $procesadosNuevos = 0;   // cuenta partidos nuevos analizados en esta tanda
 
     foreach ($leagues as $lg) {
+        if ($procesadosNuevos >= MAX_POR_TANDA) break;   // corta la tanda al llegar al límite
         $leagueId=(int)$lg['id']; $useTop=((int)$lg['priority'])===1;
         try { $api->pace(); $fixtures=$api->get('/fixtures',['league'=>$leagueId,'season'=>$season,'date'=>$today]); }
         catch (Throwable $e) { if(str_contains($e->getMessage(),'agotado')) break; continue; }
 
         foreach ($fixtures as $fx) {
+            if ($procesadosNuevos >= MAX_POR_TANDA) break;
             $fixtureId=(int)$fx['fixture']['id'];
             $koTs = strtotime($fx['fixture']['date']);
             $horasParaKO = ($koTs - time())/3600;
@@ -130,12 +135,18 @@ try {
                         ':cf'=>Scorer::confidence($finalScore),':fj'=>json_encode($analysis['factors'],JSON_UNESCAPED_UNICODE),
                         ':rv'=>$rv,':radj'=>$radj,':md'=>$model,':od'=>$mktOdds,':osrc'=>$mktOdds?'apifootball':null]);
             }
-            if ($esReinvestigacion) $reinvestigados++; else $nuevos++;
+            if ($esReinvestigacion) $reinvestigados++; else { $nuevos++; $procesadosNuevos++; }
         }
     }
 
+    $tandaLlena = ($procesadosNuevos >= MAX_POR_TANDA);
     echo json_encode(['ok'=>true,'nuevos'=>$nuevos,'reinvestigados'=>$reinvestigados,
-        'ya_estaban'=>$saltados,'req_hoy'=>$api->spentToday()], JSON_UNESCAPED_UNICODE);
+        'ya_estaban'=>$saltados,'req_hoy'=>$api->spentToday(),
+        'tanda_llena'=>$tandaLlena,
+        'msg'=> $tandaLlena
+            ? "Analizados $nuevos partidos nuevos (limite por tanda). Pulsa otra vez para seguir con los que falten."
+            : "Analizados $nuevos partidos nuevos y $reinvestigados actualizados. $saltados ya estaban."
+        ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
     http_response_code(500);
