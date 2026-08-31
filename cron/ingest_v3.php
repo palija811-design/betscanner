@@ -153,6 +153,7 @@ foreach ($leagues as $lg) {
                 $finalScore = BlendWeight::blend($statScore, $aiScore, $played);
                 $rv = $rAll[$mk]['verdict'] ?? '';
                 $radj = $finalScore - $statScore;
+                if ($rv === '' && $radj !== 0) { $rv = 'La IA ajustó el score '.($radj>0?'+':'').$radj.' puntos tras valorar el contexto del partido.'; }
                 $model = $useTop ? 'sonnet+web' : 'haiku+web';
             }
             $conf = Scorer::confidence($finalScore);
