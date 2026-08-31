@@ -47,7 +47,7 @@ $oddsFetcher = new OddsFetcher($api);
 $season = $cfg['apifootball']['season'];
 $today  = gmdate('Y-m-d');
 
-const UMBRAL_INVESTIGACION = 65;   // se investiga el partido si algún mercado llega a esto
+const UMBRAL_INVESTIGACION = 60;   // se investiga el partido si algún mercado llega a esto
 const UMBRAL_GUARDADO      = 50;   // se guarda cada mercado que supere esto (no solo el mejor)
 
 function logln(string $m): void { echo '[' . gmdate('H:i:s') . "] v3 · $m\n"; }
