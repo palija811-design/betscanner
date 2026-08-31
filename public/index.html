@@ -18,9 +18,10 @@
     background-image:radial-gradient(circle at 15% 0%,rgba(62,242,161,0.06),transparent 40%),
     radial-gradient(circle at 85% 100%,rgba(62,242,161,0.04),transparent 40%)}
   .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
-  header{display:flex;align-items:flex-end;justify-content:space-between;
-    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px;flex-wrap:wrap;gap:16px}
-  .brand{display:flex;align-items:center;gap:14px}
+  header{display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px;gap:12px}
+  .brand{display:flex;align-items:center;gap:14px;min-width:0}
+  .brand h1{white-space:nowrap}
   .logo{width:42px;height:42px;border:1.5px solid var(--signal);border-radius:10px;display:grid;
     place-items:center;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:20px;
     box-shadow:0 0 18px rgba(62,242,161,0.25) inset}
@@ -108,7 +109,6 @@
       <div class="logo">&#9672;</div>
       <div>
         <h1>Betscanner</h1>
-        <p>MOTOR HIBRIDO &middot; ESTADISTICA + INVESTIGACION IA</p>
       </div>
     </div>
     <div class="top-actions">
