@@ -18,6 +18,16 @@
   .brand h1{font-size:18px}.brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:2px}
   .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-left:8px}
   .navlink:hover{color:var(--signal);border-color:var(--signal-dim)}
+  .menu-wrap{position:relative;display:inline-block}
+  .menu-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:13px;padding:9px 14px;cursor:pointer}
+  .menu-btn:hover{border-color:var(--signal-dim);color:var(--signal)}
+  .menu-drop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:180px;z-index:50;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+  .menu-drop.open{display:block}
+  .menu-drop a{display:block;padding:12px 16px;font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);margin:0}
+  .menu-drop a:last-child{border-bottom:none}
+  .menu-drop a:hover{background:var(--panel-2);color:var(--signal)}
+  .menu-drop a.current{color:var(--signal);background:var(--panel-2)}
+
   .runbtn{background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:9px 15px;cursor:pointer}
   .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
   @media(max-width:720px){.strip{grid-template-columns:repeat(2,1fr)}}
@@ -66,7 +76,15 @@
     <div style="display:flex;gap:10px;align-items:center">
       <button class="runbtn" id="runBtn" onclick="runStrategies()">&#9654; Lanzar estrategias hoy</button>
       <a class="navlink" href="/index.html">&larr; Se&ntilde;ales</a>
-      <a class="navlink" href="/estadisticas.html">Estad&iacute;sticas</a>
+      <div class="menu-wrap">
+        <button class="menu-btn" onclick="document.getElementById('mainMenu').classList.toggle('open')">&#9776; Men&uacute;</button>
+        <div class="menu-drop" id="mainMenu">
+          <a href="/index.html">Se&ntilde;ales del d&iacute;a</a>
+          <a href="/subir.html">Analizar apuesta</a>
+          <a href="/lab.html" class="current">Laboratorio</a>
+          <a href="/estadisticas.html">Estad&iacute;sticas</a>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -271,6 +289,7 @@ function toggleStrat(head){
 }
 
 load();
+document.addEventListener('click',function(e){var m=document.getElementById('mainMenu');var b=e.target.closest('.menu-btn');if(m&&!b&&!e.target.closest('.menu-drop')){m.classList.remove('open');}});
 </script>
 </body>
 </html>

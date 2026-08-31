@@ -30,6 +30,17 @@
   .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;
     border:1px solid var(--line);border-radius:8px;padding:8px 14px;transition:.15s}
   .navlink:hover{color:var(--signal);border-color:var(--signal-dim)}
+  .menu-wrap{position:relative}
+  .menu-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font-family:var(--mono);font-size:13px;padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .menu-btn:hover{border-color:var(--signal-dim);color:var(--signal)}
+  .menu-drop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;min-width:180px;z-index:50;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+  .menu-drop.open{display:block}
+  .menu-drop a{display:block;padding:12px 16px;font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+  .menu-drop a:last-child{border-bottom:none}
+  .menu-drop a:hover{background:var(--panel-2);color:var(--signal)}
+  .menu-drop a.current{color:var(--signal);background:var(--panel-2)}
   .clock{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-align:right}
   .clock b{color:var(--signal)}
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 0 22px}
@@ -101,9 +112,15 @@
       </div>
     </div>
     <div class="top-actions">
-      <a class="navlink" href="/subir.html">+ Analizar apuesta</a>
-      <a class="navlink" href="/estadisticas.html">Estadisticas</a>
-      <a class="navlink" href="/lab.html">Laboratorio &rarr;</a>
+      <div class="menu-wrap">
+        <button class="menu-btn" onclick="document.getElementById('mainMenu').classList.toggle('open')">&#9776; Men&uacute;</button>
+        <div class="menu-drop" id="mainMenu">
+          <a href="/index.html" class="current">Se&ntilde;ales del d&iacute;a</a>
+          <a href="/subir.html">Analizar apuesta</a>
+          <a href="/lab.html">Laboratorio</a>
+          <a href="/estadisticas.html">Estad&iacute;sticas</a>
+        </div>
+      </div>
       <div class="clock" id="clock">cargando...</div>
     </div>
   </header>
@@ -116,6 +133,7 @@
     </div>
     <div class="spacer"></div>
     <button id="refreshBtn" onclick="refreshMissing()" style="background:transparent;color:var(--signal);border:1px solid var(--signal-dim);border-radius:8px;font-family:var(--mono);font-size:12px;padding:8px 14px;cursor:pointer">&#8635; Buscar partidos nuevos</button>
+    <button id="reanalyzeBtn" onclick="reanalyzeToday()" style="background:transparent;color:var(--warn);border:1px solid rgba(255,204,77,0.4);border-radius:8px;font-family:var(--mono);font-size:12px;padding:8px 14px;cursor:pointer;margin-left:8px">&#8635; Reanalizar hoy</button>
     <div class="slider-box">
       <span>SCORE MIN.</span>
       <input type="range" id="thresh" min="0" max="100" value="60" step="5">
@@ -236,6 +254,17 @@ function load(){
       document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1">Error de conexion con el servidor.</div>';
     });
 }
+function reanalyzeToday(){
+  if(!confirm('Reanalizar los partidos de hoy con la configuracion actual? Esto vuelve a llamar a la IA y gasta creditos.')) return;
+  const btn=document.getElementById('reanalyzeBtn');
+  btn.disabled=true; btn.textContent='Reanalizando... (puede tardar)';
+  fetch('/reanalyze.php').then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false; btn.innerHTML='&#8635; Reanalizar hoy';
+    if(d.ok){ alert(d.msg||'Listo.'); load(); }
+    else { alert('Error: '+(d.error||'no se pudo')); }
+  }).catch(function(){ btn.disabled=false; btn.innerHTML='&#8635; Reanalizar hoy'; alert('Error de conexion.'); });
+}
+
 function refreshMissing(){
   const btn=document.getElementById('refreshBtn');
   btn.disabled=true; btn.textContent='Buscando... (puede tardar)';
@@ -256,6 +285,7 @@ document.getElementById('thresh').addEventListener('input',function(e){
   state.thresh=+e.target.value; document.getElementById('threshVal').textContent=e.target.value; render();
 });
 load();
+document.addEventListener('click',function(e){var m=document.getElementById('mainMenu');var b=e.target.closest('.menu-btn');if(m&&!b&&!e.target.closest('.menu-drop')){m.classList.remove('open');}});
 </script>
 </body>
 </html>

@@ -20,6 +20,16 @@
   .brand h1{font-size:18px}.brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:2px}
   .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px}
   .navlink:hover{color:var(--signal)}
+  .menu-wrap{position:relative;display:inline-block}
+  .menu-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:13px;padding:9px 14px;cursor:pointer}
+  .menu-btn:hover{border-color:var(--signal-dim);color:var(--signal)}
+  .menu-drop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:180px;z-index:50;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+  .menu-drop.open{display:block}
+  .menu-drop a{display:block;padding:12px 16px;font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);margin:0}
+  .menu-drop a:last-child{border-bottom:none}
+  .menu-drop a:hover{background:var(--panel-2);color:var(--signal)}
+  .menu-drop a.current{color:var(--signal);background:var(--panel-2)}
+
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
   .tabs{display:flex;gap:8px;margin-bottom:18px}
   .tabs button{flex:1;background:transparent;color:var(--ink-dim);border:1px solid var(--line);border-radius:8px;
@@ -57,7 +67,15 @@
       <div class="logo">&#9672;</div>
       <div><h1>Analizar apuesta</h1><p>MOTOR + INVESTIGACION IA</p></div>
     </div>
-    <a class="navlink" href="/index.html">&larr; Senales</a>
+    <div class="menu-wrap">
+      <button class="menu-btn" onclick="document.getElementById('mainMenu').classList.toggle('open')">&#9776; Men&uacute;</button>
+      <div class="menu-drop" id="mainMenu">
+        <a href="/index.html">Se&ntilde;ales del d&iacute;a</a>
+        <a href="/subir.html" class="current">Analizar apuesta</a>
+        <a href="/lab.html">Laboratorio</a>
+        <a href="/estadisticas.html">Estad&iacute;sticas</a>
+      </div>
+    </div>
   </header>
 
   <div class="card">
@@ -186,6 +204,7 @@ function renderResult(d){
   html+='</div>';
   document.getElementById('result').innerHTML=html;
 }
+document.addEventListener('click',function(e){var m=document.getElementById('mainMenu');var b=e.target.closest('.menu-btn');if(m&&!b&&!e.target.closest('.menu-drop')){m.classList.remove('open');}});
 </script>
 </body>
 </html>

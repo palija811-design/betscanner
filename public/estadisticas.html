@@ -18,6 +18,16 @@
   .brand h1{font-size:18px}.brand p{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:2px}
   .navlink{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-left:8px}
   .navlink:hover{color:var(--signal)}
+  .menu-wrap{position:relative;display:inline-block}
+  .menu-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:13px;padding:9px 14px;cursor:pointer}
+  .menu-btn:hover{border-color:var(--signal-dim);color:var(--signal)}
+  .menu-drop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:180px;z-index:50;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+  .menu-drop.open{display:block}
+  .menu-drop a{display:block;padding:12px 16px;font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);margin:0}
+  .menu-drop a:last-child{border-bottom:none}
+  .menu-drop a:hover{background:var(--panel-2);color:var(--signal)}
+  .menu-drop a.current{color:var(--signal);background:var(--panel-2)}
+
   .aviso{background:rgba(255,204,77,0.08);border:1px solid rgba(255,204,77,0.3);color:var(--warn);
     font-family:var(--mono);font-size:12px;padding:12px 16px;border-radius:10px;margin-bottom:20px;line-height:1.5}
   .section-title{font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:0.08em;text-transform:uppercase;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
@@ -70,8 +80,15 @@
     </div>
     <div>
       <button id="settleBtn" onclick="settleNow()" style="background:var(--signal);color:#04120c;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer">&#8635; Actualizar resultados</button>
-      <a class="navlink" href="/index.html">Se&ntilde;ales</a>
-      <a class="navlink" href="/lab.html">Laboratorio</a>
+      <div class="menu-wrap">
+        <button class="menu-btn" onclick="document.getElementById('mainMenu').classList.toggle('open')">&#9776; Men&uacute;</button>
+        <div class="menu-drop" id="mainMenu">
+          <a href="/index.html">Se&ntilde;ales del d&iacute;a</a>
+          <a href="/subir.html">Analizar apuesta</a>
+          <a href="/lab.html">Laboratorio</a>
+          <a href="/estadisticas.html" class="current">Estad&iacute;sticas</a>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -300,6 +317,7 @@ function loadHistory(source){
 load();
 loadHistory('dashboard');
 loadHistory('lab');
+document.addEventListener('click',function(e){var m=document.getElementById('mainMenu');var b=e.target.closest('.menu-btn');if(m&&!b&&!e.target.closest('.menu-drop')){m.classList.remove('open');}});
 </script>
 </body>
 </html>
