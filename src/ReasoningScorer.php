@@ -50,22 +50,27 @@ pregúntate SIEMPRE:
 
 REGLA CRÍTICA — cada mercado tiene su PROPIA lógica. No las confundas:
 - OVER 2.5 = que haya 3+ goles EN TOTAL, los meta quien los meta. Un favorito
-  fuerte y goleador en casa puede sostener el Over ÉL SOLO (ej: gana 3-0), sin
-  que el rival marque. Por eso, ante un favorito claro y goleador jugando en
-  casa contra un rival flojo, el OVER NO debe rebajarse mucho: es justo el tipo
-  de partido que acaba 3-0, 3-1, 4-0. La debilidad del rival NO baja el Over si
-  el favorito mete goles de sobra. Rebaja el Over solo si el favorito NO es
-  especialmente goleador o si el rival defiende muy bien.
+  goleador en casa puede sostener el Over él solo (ej: gana 3-0), sin que el
+  rival marque. Por eso NO hundas el Over solo porque el rival sea débil. PERO
+  tampoco lo infles: un favorito goleador hace el Over PROBABLE, no seguro. Ese
+  mismo favorito también gana muchos partidos 2-0 o 1-0, que NO cumplen el Over.
+  Un Over bien valorado de un favorito en casa suele quedar en la franja 62-75,
+  no en 85-90. Reserva 80+ solo si AMBOS equipos son muy goleadores y las
+  defensas flojas por los dos lados, no por tener un solo favorito fuerte.
 - BTTS = que marquen LOS DOS. Aquí SÍ importa que el rival débil sea capaz de
   marcar. Ante un favorito con defensa sólida contra un rival flojo o recién
-  ascendido que apenas marca, el BTTS debe ser BAJO, aunque el favorito golee.
-  Esta es la diferencia clave: un 3-0 mata el BTTS pero cumple el Over.
+  ascendido que apenas marca, el BTTS debe ser BAJO (típicamente 40-55), aunque
+  el favorito golee. Un 3-0 mata el BTTS pero cumple el Over: por eso el Over y
+  el BTTS de un favorito-contra-débil casi nunca son ambos altos. Si pones el
+  Over alto, el BTTS debería ser claramente más bajo.
 - UNDER 2.5 = pocos goles. Solo alto si AMBOS equipos son de pocos goles o hay
   defensas muy sólidas por los dos lados. Un favorito goleador en casa hace el
   Under improbable.
 
-En resumen: la debilidad de un rival hunde el BTTS, pero NO el Over si enfrente
-hay un favorito que mete goles solo. Trátalos por separado.
+En resumen: la debilidad de un rival hunde el BTTS, pero solo modera un poco el
+Over (no lo hunde ni lo dispara). Calibra con los pies en el suelo: la mayoría
+de partidos, incluso los claros, viven en la franja 55-75; el 80+ es excepcional
+y hay que ganárselo con varios factores fuertes, no con uno solo.
 
 Cómo puntuar cada mercado (BTTS, OVER 2.5, UNDER 2.5), 0..100:
 - Da tu propio juicio del partido, no un eco de las medias, PERO aplicando a
@@ -83,11 +88,13 @@ Otros principios:
   Over sigue siendo viable pese a la debilidad rival").
 - Nunca uses lenguaje de certeza absoluta ni prometas aciertos.
 
-Responde ÚNICAMENTE con JSON válido, sin markdown:
+Responde ÚNICAMENTE con JSON válido, sin markdown. El campo "verdict" es
+OBLIGATORIO en cada mercado: una frase clara que explique POR QUÉ ese score
+(el factor decisivo). Nunca dejes "verdict" vacío.
 {
-  "BTTS":  {"score": <int>, "verdict": "<str>", "risk": "<str>"},
-  "OVER":  {"score": <int>, "verdict": "<str>", "risk": "<str>"},
-  "UNDER": {"score": <int>, "verdict": "<str>", "risk": "<str>"},
+  "BTTS":  {"score": <int>, "verdict": "<str obligatorio>", "risk": "<str>"},
+  "OVER":  {"score": <int>, "verdict": "<str obligatorio>", "risk": "<str>"},
+  "UNDER": {"score": <int>, "verdict": "<str obligatorio>", "risk": "<str>"},
   "data_reliability": "<alta|media|baja — y por qué en pocas palabras>",
   "key_factors": ["<factor 1>", "<factor 2>"]
 }
