@@ -1,41 +1,59 @@
 <?php
 declare(strict_types=1);
 /**
- * Diagnóstico: muestra la respuesta CRUDA de la IA para un partido de prueba,
- * y si el parseo extrae bien los scores y el verdict.
+ * Diagnóstico ampliado: muestra la respuesta CRUDA de la IA (sin parsear),
+ * para ver qué formato está rompiendo el parseo.
  *   GET /debug_ia.php
- * BORRAR este archivo tras diagnosticar.
+ * BORRAR tras diagnosticar.
  */
 require __DIR__ . '/../src/Db.php';
-require __DIR__ . '/../src/ReasoningScorer.php';
-use SignalPitch\ReasoningScorer;
+use SignalPitch\Db;
 
 header('Content-Type: text/plain; charset=utf-8');
 $cfg = require __DIR__ . '/../config/config.php';
 set_time_limit(120);
 
-// contexto de prueba: un favorito goleador en casa (tipo Aston Villa-Arsenal)
-$ctx = [
-    'league'=>'Premier League','kickoff'=>'21:00','stage'=>null,
-    'h2h'=>'Goles esperados combinados: 2.8',
-    'home'=>['name'=>'Aston Villa','form'=>null,'gf_avg'=>1.2,'ga_avg'=>1.8,'btts_pct'=>50,'over25_pct'=>null,'injuries'=>null],
-    'away'=>['name'=>'Arsenal','form'=>null,'gf_avg'=>2.2,'ga_avg'=>0.75,'btts_pct'=>40,'over25_pct'=>null,'injuries'=>null],
+// Construimos la llamada a la API igual que ReasoningScorer, pero mostramos la respuesta cruda
+$claude = $cfg['claude'];
+
+$system = "Eres un analista de fútbol. Para cada mercado (BTTS, OVER, UNDER) da un score 0-100 y un verdict de una frase. Responde SOLO con JSON: {\"BTTS\":{\"score\":50,\"verdict\":\"...\"},\"OVER\":{\"score\":50,\"verdict\":\"...\"},\"UNDER\":{\"score\":50,\"verdict\":\"...\"}}";
+$user = "Analiza Aston Villa vs Arsenal. Villa marca 1.2 encaja 1.8. Arsenal marca 2.2 encaja 0.75.";
+
+$body = [
+    'model' => $claude['model_top'] ?? 'claude-sonnet-4-6',
+    'max_tokens' => 1500,
+    'system' => $system,
+    'messages' => [['role'=>'user','content'=>$user]],
+    'tools' => [['type'=>'web_search_20250305','name'=>'web_search']],
 ];
 
-$reasoner = new ReasoningScorer($cfg['claude']);
-try {
-    $r = $reasoner->analyze($ctx, true, true);  // useTop=true (sonnet), web=true
-    echo "=== RESULTADO PARSEADO ===\n";
-    foreach (['BTTS','OVER','UNDER'] as $mk) {
-        $sc = $r[$mk]['score'] ?? 'NO HAY SCORE';
-        $vd = $r[$mk]['verdict'] ?? 'NO HAY VERDICT';
-        echo "$mk: score=$sc\n   verdict: $vd\n";
-    }
-    echo "\nmodel: ".($r['model'] ?? '?')."\n";
-    echo "\n=== ¿Se parseó bien? ===\n";
-    echo isset($r['OVER']['score']) && $r['OVER']['score']>0
-        ? "SÍ: la IA devolvió scores parseables.\n"
-        : "NO: el parseo falló, no hay scores. Aquí está el problema.\n";
-} catch (Throwable $e) {
-    echo "ERROR: ".$e->getMessage()."\n";
+$ch = curl_init($claude['base']);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 90,
+    CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE),
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'x-api-key: ' . $claude['key'],
+        'anthropic-version: ' . $claude['version'],
+    ],
+]);
+$resp = curl_exec($ch);
+$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+echo "=== HTTP $code ===\n\n";
+$json = json_decode($resp, true);
+
+echo "=== TIPOS DE BLOQUES EN LA RESPUESTA ===\n";
+foreach (($json['content'] ?? []) as $i => $block) {
+    $t = $block['type'] ?? '?';
+    $preview = '';
+    if ($t === 'text') $preview = substr($block['text'], 0, 500);
+    echo "[$i] type=$t".($preview ? "\n    texto: $preview" : '')."\n\n";
 }
+
+echo "\n=== MODELO CONFIGURADO ===\n";
+echo "model_top: ".($claude['model_top'] ?? 'NO DEFINIDO')."\n";
+echo "model (haiku): ".($claude['model'] ?? 'NO DEFINIDO')."\n";
+echo "base: ".($claude['base'] ?? 'NO DEFINIDO')."\n";
+echo "version: ".($claude['version'] ?? 'NO DEFINIDO')."\n";
