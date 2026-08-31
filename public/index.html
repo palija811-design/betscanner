@@ -42,7 +42,7 @@
   .menu-drop a:last-child{border-bottom:none}
   .menu-drop a:hover{background:var(--panel-2);color:var(--signal)}
   .menu-drop a.current{color:var(--signal);background:var(--panel-2)}
-  .clock{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-align:right}
+  .clock{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-align:left;margin-top:3px}
   .clock b{color:var(--signal)}
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 0 22px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -109,6 +109,7 @@
       <div class="logo">&#9672;</div>
       <div>
         <h1>Betscanner</h1>
+        <div class="clock" id="clock">cargando...</div>
       </div>
     </div>
     <div class="top-actions">
@@ -121,7 +122,6 @@
           <a href="/estadisticas.html">Estad&iacute;sticas</a>
         </div>
       </div>
-      <div class="clock" id="clock">cargando...</div>
     </div>
   </header>
   <div class="controls">
