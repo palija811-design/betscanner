@@ -231,11 +231,32 @@ SYS;
 
     private function parseJson(string $text): array
     {
+        $vacio = ['BTTS'=>[],'OVER'=>[],'UNDER'=>[]];
         $text = trim($text);
-        $text = preg_replace('/^```(?:json)?|```$/m', '', $text) ?? $text;
+        $text = preg_replace('/```(?:json)?/i', '', $text) ?? $text;
+        $text = str_replace('```', '', $text);
+
+        // Intento 1: el JSON completo (primer { al último }).
         $start = strpos($text, '{'); $end = strrpos($text, '}');
-        if ($start === false || $end === false) return ['BTTS'=>[],'OVER'=>[],'UNDER'=>[]];
-        $out = json_decode(substr($text, $start, $end - $start + 1), true);
-        return is_array($out) ? $out : ['BTTS'=>[],'OVER'=>[],'UNDER'=>[]];
+        if ($start !== false && $end !== false && $end > $start) {
+            $out = json_decode(substr($text, $start, $end - $start + 1), true);
+            if (is_array($out) && (isset($out['OVER']) || isset($out['BTTS']))) return $out;
+        }
+
+        // Intento 2: puede haber llaves espurias antes del JSON real. Buscamos el
+        // primer '{' que va seguido (más adelante) de '"BTTS"' o '"OVER"', y
+        // probamos a decodificar desde ahí hasta el último '}'.
+        if ($end !== false) {
+            $pos = 0;
+            while (($p = strpos($text, '{', $pos)) !== false) {
+                $cand = substr($text, $p, $end - $p + 1);
+                if (strpos($cand, '"BTTS"') !== false || strpos($cand, '"OVER"') !== false) {
+                    $out = json_decode($cand, true);
+                    if (is_array($out) && (isset($out['OVER']) || isset($out['BTTS']))) return $out;
+                }
+                $pos = $p + 1;
+            }
+        }
+        return $vacio;
     }
 }
