@@ -71,7 +71,7 @@ SYS;
      */
     public function analyze(array $ctx, bool $useTop, bool $useWeb = false): array
     {
-        $model = $useTop ? $this->cfg['model_top'] : $this->cfg['model_bulk'];
+        $model = $this->cfg['model_bulk']; // forzado a Haiku (bulk) para ahorrar mientras se depura
 
         $userText = $this->buildContext($ctx);
 
@@ -91,7 +91,7 @@ SYS;
                 'type' => 'web_search_20250305',
                 'name' => 'web_search',
             ]];
-            $body['max_tokens'] = 1200;
+            $body['max_tokens'] = 4000;
         }
 
         $text = $this->call($body);
@@ -112,7 +112,7 @@ SYS;
                 $parsed['OVER']['score'] = min($parsed['OVER']['score'], 45);
             }
         }
-        $parsed['model'] = $useTop ? 'sonnet' : 'haiku';
+        $parsed['model'] = 'haiku'; // forzado a Haiku
         return $parsed;
     }
 
