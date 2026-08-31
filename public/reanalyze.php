@@ -131,7 +131,8 @@ try {
                       final_score=VALUES(final_score),confidence=VALUES(confidence),factors_json=VALUES(factors_json),
                       research_verdict=VALUES(research_verdict),research_adjustment=VALUES(research_adjustment),
                       model_used=VALUES(model_used),odds=VALUES(odds),odds_source=VALUES(odds_source),computed_at=CURRENT_TIMESTAMP")
-                    ->execute([':fx'=>$fixtureId,':mk'=>$mk,':ss'=>$statScore,':as'=>$finalScore,':fs'=>$finalScore,
+                    ->execute([':fx'=>$fixtureId,':mk'=>$mk,':ss'=>$statScore,
+                        ':as'=>($rAll!==null && isset($rAll[$mk]['score']) ? (int)$rAll[$mk]['score'] : null),':fs'=>$finalScore,
                         ':cf'=>Scorer::confidence($finalScore),':fj'=>json_encode($analysis['factors'],JSON_UNESCAPED_UNICODE),
                         ':rv'=>$rv,':radj'=>$radj,':md'=>$model,':od'=>$mktOdds,':osrc'=>$mktOdds?'apifootball':null]);
             }
