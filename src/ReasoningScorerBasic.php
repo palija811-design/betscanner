@@ -170,11 +170,19 @@ SYS;
         if ($code !== 200) throw new RuntimeException("HTTP $code Claude: " . substr((string)$resp, 0, 300));
 
         $json = json_decode($resp, true);
-        $text = '';
+        $textos = [];
         foreach (($json['content'] ?? []) as $block) {
-            if (($block['type'] ?? '') === 'text') $text .= $block['text'];
+            if (($block['type'] ?? '') === 'text' && trim($block['text']) !== '') {
+                $textos[] = $block['text'];
+            }
         }
-        return $text;
+        if (!$textos) return '';
+        for ($i = count($textos) - 1; $i >= 0; $i--) {
+            if (strpos($textos[$i], '{') !== false && strpos($textos[$i], '"score"') !== false) {
+                return $textos[$i];
+            }
+        }
+        return end($textos);
     }
 
     private function parseJson(string $text): array

@@ -209,11 +209,24 @@ SYS;
         if ($code !== 200) throw new RuntimeException("HTTP $code Claude: " . substr((string)$resp, 0, 300));
 
         $json = json_decode($resp, true);
-        $text = '';
+        // Con web search, la respuesta trae varios bloques de texto (antes y
+        // después de buscar). Nos quedamos con el ÚLTIMO bloque de texto, que es
+        // donde va el JSON final. Concatenarlos todos rompía el parseo del verdict.
+        $textos = [];
         foreach (($json['content'] ?? []) as $block) {
-            if (($block['type'] ?? '') === 'text') $text .= $block['text'];
+            if (($block['type'] ?? '') === 'text' && trim($block['text']) !== '') {
+                $textos[] = $block['text'];
+            }
         }
-        return $text;
+        if (!$textos) return '';
+        // buscamos, de atrás hacia delante, el primer bloque que contenga un JSON
+        for ($i = count($textos) - 1; $i >= 0; $i--) {
+            if (strpos($textos[$i], '{') !== false && strpos($textos[$i], '"score"') !== false) {
+                return $textos[$i];
+            }
+        }
+        // si ninguno tiene el JSON claro, devolvemos el último (mejor que concatenar)
+        return end($textos);
     }
 
     private function parseJson(string $text): array
