@@ -30,6 +30,11 @@ $fMarkets = isset($_GET['markets']) && $_GET['markets'] !== ''
 $fBandas = isset($_GET['bandas']) && $_GET['bandas'] !== ''
     ? array_intersect(explode(',', strtolower($_GET['bandas'])), ['fuerte','moderada','debil'])
     : [];
+// score mínimo personalizado: el usuario elige desde qué score quiere ver
+// la tasa de acierto y rentabilidad, en vez de las tres bandas fijas.
+$scoreMin = isset($_GET['score_min']) && $_GET['score_min'] !== ''
+    ? max(0, min(100, (int)$_GET['score_min']))
+    : null;
 
 // construye el WHERE del simulador según los filtros
 function bandaSql(array $bandas): string {
@@ -46,6 +51,10 @@ function marketSql(array $markets, PDO $pdo): string {
     if (!$markets) return '';
     $q = array_map(fn($m)=>$pdo->quote($m), $markets);
     return ' AND market IN ('.implode(',', $q).')';
+}
+function scoreMinSql(?int $scoreMin): string {
+    if ($scoreMin === null) return '';
+    return " AND final_score >= $scoreMin";
 }
 
 try {
@@ -74,7 +83,7 @@ try {
     )->fetchAll();
 
     // ---- Totales dashboard + simulador (CON filtros aplicados) ----
-    $whereFiltros = bandaSql($fBandas) . marketSql($fMarkets, $pdo);
+    $whereFiltros = bandaSql($fBandas) . marketSql($fMarkets, $pdo) . scoreMinSql($scoreMin);
     $tot = $pdo->query(
         "SELECT COUNT(*) n, SUM(outcome='win') wins, SUM(outcome='loss') losses,
             ROUND(SUM(profit),2) profit_u
@@ -90,9 +99,11 @@ try {
         'resultado'    => round($profitU * $stake, 2),   // ganancia/pérdida neta
         'roi_pct'      => $n ? round(100 * $profitU / $n, 1) : 0,
         'hit_rate'     => $n ? round(100 * (int)$tot['wins'] / $n, 1) : 0,
-        'filtros'      => ['markets'=>array_values($fMarkets), 'bandas'=>array_values($fBandas)],
+        'filtros'      => ['markets'=>array_values($fMarkets), 'bandas'=>array_values($fBandas), 'score_min'=>$scoreMin],
         'aviso_filtro' => $n > 0 && $n < 20
-            ? "Con estos filtros solo quedan $n apuestas: la cifra es poco fiable, tomatela como orientativa."
+            ? ($scoreMin !== null
+                ? "Con score m\u00ednimo $scoreMin solo quedan $n apuestas: la cifra es poco fiable, tom\u00e1tela como orientativa."
+                : "Con estos filtros solo quedan $n apuestas: la cifra es poco fiable, tomatela como orientativa.")
             : null,
     ];
 
