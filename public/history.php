@@ -18,7 +18,11 @@ header('Content-Type: application/json; charset=utf-8');
 $cfg = require __DIR__ . '/../config/config.php';
 
 $source = $_GET['source'] ?? 'dashboard';
-$limit = min(200, max(10, (int)($_GET['limit'] ?? 100)));
+// Si no se pide un limit explícito, no se aplica ninguno: trae TODO lo liquidado.
+// Esto evita que el acordeón de bandas (fuerte/moderada/débil) se quede corto
+// cuando el histórico crece por encima de un límite fijo.
+$limit = isset($_GET['limit']) ? min(5000, max(10, (int)$_GET['limit'])) : null;
+$limitSql = $limit !== null ? "LIMIT $limit" : "";
 
 try {
     $pdo = Db::conn($cfg['db']);
@@ -45,7 +49,7 @@ try {
                 LEFT JOIN fixture_results fr ON fr.fixture_id = f.id AND fr.market = p.market
                 WHERE $where
                 ORDER BY p.settled_at DESC
-                LIMIT $limit";
+                $limitSql";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
@@ -62,7 +66,7 @@ try {
                 LEFT JOIN fixture_results fr ON fr.fixture_id = f.id AND fr.market = s.market
                 WHERE s.outcome IN ('win','loss')
                 ORDER BY s.settled_at DESC
-                LIMIT $limit";
+                $limitSql";
         $rows = $pdo->query($sql)->fetchAll();
     }
 
